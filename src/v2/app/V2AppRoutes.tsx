@@ -4,6 +4,7 @@
 //   PlatformShell (nav rail + catalog providers)
 //     └── PersistentPages (visited sections stay mounted)
 //           ├── /                       → LandingPage
+//           ├── /about                  → AboutPage
 //           ├── /notebooks              → NotebooksPage
 //           ├── /monitoring             → MonitoringPage
 //           ├── /experiences            → ExperiencesPage

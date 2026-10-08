@@ -16,22 +16,31 @@ import ImageryTileLayer from '@arcgis/core/layers/ImageryTileLayer';
 import MapImageLayer from '@arcgis/core/layers/MapImageLayer';
 import Graphic from '@arcgis/core/Graphic';
 import LayerList from '@arcgis/core/widgets/LayerList';
+import RasterColormapRenderer from '@arcgis/core/renderers/RasterColormapRenderer';
+import RasterStretchRenderer from '@arcgis/core/renderers/RasterStretchRenderer';
 import IdentityManager from '@arcgis/core/identity/IdentityManager';
 import { Loader2 } from 'lucide-react';
 import { ARCGIS_SERVER_URL } from '../../config/geoprocessing';
+import { fetchRasterClassSwatches, type ClassSwatch } from '../../services/rasterClassLabels';
+import { resolveMosaicRule } from '../../services/mosaicSelection';
+import { fetchRasterHistogram, formatHistogramValue } from '../../services/rasterHistogram';
+import { continuousLegend, continuousStretchOptions, stretchLegendFromRenderer, type StretchLegend } from './stretchLegend';
+import { CollapsibleSection } from './CollapsibleSection';
+import { SUITABILITY_DISPLAY_SUBLAYER_TITLE, suitabilityRampColors } from './suitabilityRamp';
 import { isTiledImageServerUrl } from '../Map/layers/tncArcgisLayer';
 import { createPreserveOutlineLayer } from '../Monitoring/internal/boundaryOutlineLayer';
 import {
+  ANALYSIS_EXTENT_BOUNDARIES,
   ANALYSIS_EXTENT_LAYER_ID,
   createAnalysisExtentOutlineLayer,
 } from './analysisExtentLayer';
-import type { PointsAction, PreviewAction, RasterScope, ResultLayerInfo } from './types';
+import type { CompletedRun, PointsAction, PreviewAction, RasterScope } from './types';
 
 interface ExperienceMapProps {
   center: [number, number];
   zoom: number;
   token: string | null;
-  resultLayer: ResultLayerInfo | null;
+  resultLayers: CompletedRun[];
   pointsAction: PointsAction | null;
   previewAction: PreviewAction | null;
   /** When set, show that catalog boundary and fit the map to it. */
@@ -50,6 +59,57 @@ function findChildLayer(group: GroupLayer, title: string) {
   return group.layers.find((layer) => layer.title === title) ?? null;
 }
 
+interface ResultLegendSwatch {
+  label: string;
+  imageData: string;
+  contentType: string;
+}
+
+interface ResultLegend {
+  jobId: string;
+  title: string;
+  swatches: ResultLegendSwatch[];
+}
+
+interface ActivePreview {
+  rasterId: number;
+  title: string;
+  url: string;
+  datasetId: number | null;
+  mosaicTag: string | null;
+  /** Null until the source legend has been read. */
+  swatches: ClassSwatch[] | null;
+  legendRamp: StretchLegend | null;
+  legendLoaded: boolean;
+}
+
+function colormapRenderer(swatches: ClassSwatch[]): RasterColormapRenderer {
+  return new RasterColormapRenderer({
+    colormapInfos: swatches.map((swatch) => ({
+      value: swatch.value,
+      label: swatch.label,
+      color: [swatch.color[0], swatch.color[1], swatch.color[2], 255],
+    })),
+  });
+}
+
+/**
+ * A suitability result map service has one sublayer per output. Draw only the
+ * colored display raster when the service has one, found by its name. If no
+ * sublayer matches (older services publish just the score raster), every
+ * sublayer is left as the service defines it.
+ */
+function showSuitabilityDisplaySublayer(layer: MapImageLayer): void {
+  const sublayers = layer.sublayers?.toArray() ?? [];
+  const display = sublayers.filter((sublayer) =>
+    SUITABILITY_DISPLAY_SUBLAYER_TITLE.test(sublayer.title ?? ''),
+  );
+  if (display.length === 0) return;
+  for (const sublayer of sublayers) {
+    sublayer.visible = display.includes(sublayer);
+  }
+}
+
 function getOrCreateGroup(view: MapView, title: string): GroupLayer {
   const map = requireMap(view);
   const existing = map.layers.find(
@@ -66,18 +126,21 @@ export function ExperienceMap({
   center,
   zoom,
   token,
-  resultLayer,
+  resultLayers,
   pointsAction,
   previewAction,
   analysisExtent,
 }: ExperienceMapProps) {
   const mapDivRef = useRef<HTMLDivElement | null>(null);
-  const layerListRef = useRef<HTMLDivElement | null>(null);
+  const layerListHostRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<MapView | null>(null);
   const previewLayersRef = useRef(new Map<string, ImageryLayer | ImageryTileLayer>());
+  const stretchedPreviewIdsRef = useRef(new Set<string>());
   const tokenRegisteredRef = useRef(false);
   const managesAnalysisExtentRef = useRef(analysisExtent != null);
   const [isReady, setIsReady] = useState(false);
+  const [previews, setPreviews] = useState<ActivePreview[]>([]);
+  const [resultLegends, setResultLegends] = useState<ResultLegend[]>([]);
 
   useEffect(() => {
     if (token && !tokenRegisteredRef.current) {
@@ -101,7 +164,9 @@ export function ExperienceMap({
     });
 
     if (!managesAnalysisExtentRef.current) {
-      requireMap(view).add(createPreserveOutlineLayer());
+      const outline = createPreserveOutlineLayer();
+      outline.legendEnabled = false;
+      requireMap(view).add(outline);
     }
     viewRef.current = view;
 
@@ -113,10 +178,13 @@ export function ExperienceMap({
       if (view.popup) view.popup.dockEnabled = false;
       setIsReady(true);
 
-      if (layerListRef.current) {
+      const host = layerListHostRef.current;
+      if (host) {
+        const container = document.createElement('div');
+        host.replaceChildren(container);
         layerList = new LayerList({
           view,
-          container: layerListRef.current,
+          container,
         });
       }
     });
@@ -124,6 +192,8 @@ export function ExperienceMap({
     return () => {
       isCancelled = true;
       layerList?.destroy();
+      layerListHostRef.current?.replaceChildren();
+      previewLayersRef.current.clear();
       view.destroy();
       viewRef.current = null;
     };
@@ -139,6 +209,7 @@ export function ExperienceMap({
     if (existing) map.remove(existing);
 
     const layer = createAnalysisExtentOutlineLayer(analysisExtent);
+    layer.legendEnabled = true;
     map.add(layer);
 
     void (async () => {
@@ -160,22 +231,102 @@ export function ExperienceMap({
 
   useEffect(() => {
     const view = viewRef.current;
-    if (!view || !isReady || !resultLayer) return;
+    if (!view || !isReady) return;
 
-    const group = getOrCreateGroup(view, resultLayer.groupTitle);
-    const existing = findChildLayer(group, resultLayer.title);
-    if (existing) group.remove(existing);
+    const map = requireMap(view);
+    const prefix = 'suitability-result-';
+    const wanted = new Map(resultLayers.map((run) => [`${prefix}${run.jobId}`, run]));
 
-    const layer = new MapImageLayer({
-      url: `${resultLayer.mapServerUrl}/jobs/${resultLayer.jobId}`,
-      title: resultLayer.title,
-      opacity: 0.75,
+    map.layers
+      .filter((layer) => layer.id?.startsWith(prefix) && !wanted.has(layer.id))
+      .forEach((layer) => map.remove(layer));
+
+    let cancelled = false;
+    for (const run of resultLayers) {
+      const id = `${prefix}${run.jobId}`;
+      const existing = map.layers.find((layer) => layer.id === id);
+      if (existing) {
+        existing.visible = run.visible;
+        existing.title = run.title;
+        if (existing instanceof MapImageLayer) {
+          void existing.load().then(() => {
+            existing.sublayers?.forEach((sublayer) => {
+              sublayer.listMode = 'hide';
+            });
+            if (run.record) showSuitabilityDisplaySublayer(existing);
+          }).catch(() => {
+            // Keep the layer-list row even if the result map image is unavailable.
+          });
+        }
+        continue;
+      }
+      const layer = new MapImageLayer({
+        id,
+        url: `${run.mapServerUrl}/jobs/${run.jobId}`,
+        title: run.title,
+        opacity: 0.75,
+        visible: run.visible,
+        imageFormat: 'png32',
+      });
+      map.add(layer);
+      layer.load().then(() => {
+        layer.sublayers?.forEach((sublayer) => {
+          sublayer.listMode = 'hide';
+        });
+        if (run.record) showSuitabilityDisplaySublayer(layer);
+        if (cancelled || !run.visible) return undefined;
+        const extent = layer.fullExtent;
+        if (extent) return view.goTo(extent.expand(1.2));
+        return undefined;
+      }).catch(() => {
+        // The list entry can exist while the result map service image fails.
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [isReady, resultLayers]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const runs = resultLayers;
+    if (runs.length === 0) {
+      setResultLegends([]);
+      return undefined;
+    }
+    Promise.all(runs.map(async (run): Promise<ResultLegend> => {
+      // Suitability results are RGB, so the service legend would list bands.
+      // They get a score ramp instead.
+      if (run.record) return { jobId: run.jobId, title: run.title, swatches: [] };
+      try {
+        const response = await fetch(`${run.mapServerUrl}/jobs/${run.jobId}/legend?f=json`);
+        if (!response.ok) return { jobId: run.jobId, title: run.title, swatches: [] };
+        const payload = await response.json() as {
+          layers?: Array<{
+            legend?: Array<{ label?: string; imageData?: string; contentType?: string }>;
+          }>;
+        };
+        const swatches = (payload.layers ?? []).flatMap((layer) =>
+          (layer.legend ?? []).flatMap((entry) => {
+            if (!entry.imageData) return [];
+            return [{
+              label: entry.label ?? '',
+              imageData: entry.imageData,
+              contentType: entry.contentType || 'image/png',
+            }];
+          }),
+        );
+        return { jobId: run.jobId, title: run.title, swatches };
+      } catch {
+        return { jobId: run.jobId, title: run.title, swatches: [] };
+      }
+    })).then((legends) => {
+      if (!cancelled) setResultLegends(legends);
     });
-    group.add(layer);
-    layer.when(() => {
-      if (layer.fullExtent) view.goTo(layer.fullExtent.expand(1.2)).catch(() => {});
-    });
-  }, [isReady, resultLayer]);
+    return () => {
+      cancelled = true;
+    };
+  }, [resultLayers]);
 
   useEffect(() => {
     const view = viewRef.current;
@@ -273,57 +424,322 @@ export function ExperienceMap({
   }, [isReady, pointsAction]);
 
   useEffect(() => {
-    const view = viewRef.current;
-    if (!view || !isReady || !previewAction) return;
-
-    const key = String(previewAction.rasterId);
-    const map = requireMap(view);
-
+    if (!previewAction?.url && previewAction?.action !== 'remove') return;
     if (previewAction.action === 'remove') {
-      const existing = previewLayersRef.current.get(key);
-      if (existing) {
-        map.remove(existing);
-        previewLayersRef.current.delete(key);
-      }
+      setPreviews((current) => current.filter((preview) => preview.rasterId !== previewAction.rasterId));
       return;
     }
-
-    const existing = previewLayersRef.current.get(key);
-    if (existing) {
-      map.remove(existing);
-      previewLayersRef.current.delete(key);
-    }
-
     if (!previewAction.url) return;
 
-    const layerOptions = {
-      url: previewAction.url,
-      title: previewAction.title || 'Preview',
-      opacity: 0.7,
-    };
-    const layer = isTiledImageServerUrl(previewAction.url)
-      ? new ImageryTileLayer(layerOptions)
-      : new ImageryLayer(layerOptions);
-    map.add(layer);
-    previewLayersRef.current.set(key, layer);
-    layer.when(() => {
-      if (layer.fullExtent) view.goTo(layer.fullExtent.expand(1.1)).catch(() => {});
+    const rasterId = previewAction.rasterId;
+    const url = previewAction.url;
+    const datasetId = previewAction.datasetId ?? null;
+    const mosaicTag = previewAction.mosaicTag ?? null;
+    setPreviews((current) => {
+      if (current.some((preview) => preview.rasterId === rasterId)) return current;
+      return [
+        ...current,
+        {
+          rasterId,
+          title: previewAction.title || 'Preview',
+          url,
+          datasetId,
+          mosaicTag,
+          swatches: null,
+          legendRamp: null,
+          legendLoaded: false,
+        },
+      ];
     });
-  }, [isReady, previewAction]);
+
+    fetchRasterClassSwatches({ rasterUrl: url, datasetId, token })
+      .then((swatches) => {
+        setPreviews((current) =>
+          current.map((preview) =>
+            preview.rasterId === rasterId
+              ? { ...preview, swatches, legendLoaded: true }
+              : preview,
+          ),
+        );
+      })
+      .catch(() => {
+        setPreviews((current) =>
+          current.map((preview) =>
+            preview.rasterId === rasterId ? { ...preview, legendLoaded: true } : preview,
+          ),
+        );
+      });
+  }, [previewAction, token]);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view || !isReady) return;
+    const map = requireMap(view);
+
+    const stretchPreviewToItem = (imagery: ImageryLayer, mosaicTag: string, key: string, rasterId: number) => {
+      const expected = continuousLegend(0, 1).colors;
+      const applied = stretchLegendFromRenderer(imagery.renderer);
+      const locked = imagery.mosaicRule?.method === 'lock-raster';
+      if (
+        stretchedPreviewIdsRef.current.has(key)
+        && locked
+        && applied?.colors[0] === expected[0]
+        && applied?.colors[1] === expected[1]
+      ) {
+        return;
+      }
+      stretchedPreviewIdsRef.current.add(key);
+      const serviceUrl = imagery.url;
+      if (!serviceUrl) return;
+
+      resolveMosaicRule({ rasterUrl: serviceUrl, tag: mosaicTag, token })
+        .then((rule) => {
+          if (previewLayersRef.current.get(key) !== imagery) return;
+          if (rule) imagery.mosaicRule = rule;
+          return fetchRasterHistogram({
+            url: serviceUrl,
+            extent: 'full',
+            scope: analysisExtent ?? 'preserve',
+            resolutionMeters: null,
+            categorical: false,
+            mosaicTag,
+            token,
+          });
+        })
+        .then((histogram) => {
+          if (!histogram) return;
+          if (previewLayersRef.current.get(key) !== imagery) return;
+          const occupied = histogram.bins.filter((bin) => bin.count > 0);
+          const min = occupied[0]?.min;
+          const max = occupied[occupied.length - 1]?.max;
+          if (min == null || max == null || !(max > min)) return;
+          imagery.renderer = new RasterStretchRenderer(continuousStretchOptions(min, max));
+          const ramp = continuousLegend(min, max);
+          setPreviews((currentPreviews) => {
+            const existing = currentPreviews.find((item) => item.rasterId === rasterId)?.legendRamp;
+            if (
+              existing
+              && existing.min === ramp.min
+              && existing.max === ramp.max
+              && existing.colors[0] === ramp.colors[0]
+              && existing.colors[1] === ramp.colors[1]
+            ) {
+              return currentPreviews;
+            }
+            return currentPreviews.map((item) =>
+              item.rasterId === rasterId ? { ...item, legendRamp: ramp, legendLoaded: true } : item,
+            );
+          });
+        })
+        .catch(() => {
+          stretchedPreviewIdsRef.current.delete(key);
+        });
+    };
+    const desired = new Set(previews.map((preview) => String(preview.rasterId)));
+
+    for (const [key, layer] of previewLayersRef.current) {
+      if (desired.has(key)) continue;
+      map.remove(layer);
+      previewLayersRef.current.delete(key);
+      stretchedPreviewIdsRef.current.delete(key);
+    }
+
+    for (const preview of previews) {
+      const key = String(preview.rasterId);
+      let layer = previewLayersRef.current.get(key);
+      if (!layer) {
+        const layerOptions = {
+          url: preview.url,
+          title: preview.title,
+          opacity: 0.85,
+          listMode: 'show' as const,
+          legendEnabled: true,
+          // Coarse analysis grids should keep hard cell edges.
+          interpolation: 'nearest' as const,
+        };
+        layer = isTiledImageServerUrl(preview.url)
+          ? new ImageryTileLayer(layerOptions)
+          : new ImageryLayer(layerOptions);
+        map.add(layer);
+        previewLayersRef.current.set(key, layer);
+        const publishRamp = () => {
+          const band = 'rasterInfo' in layer ? layer.rasterInfo?.statistics?.[0] : null;
+          const ramp = stretchLegendFromRenderer(layer.renderer, band);
+          if (!ramp) return false;
+          setPreviews((current) =>
+            current.map((item) =>
+              item.rasterId === preview.rasterId
+                ? { ...item, legendRamp: ramp, legendLoaded: true }
+                : item,
+            ),
+          );
+          return true;
+        };
+        layer.when(() => {
+          if (previewLayersRef.current.get(key) !== layer) return;
+          if (layer.fullExtent) view.goTo(layer.fullExtent.expand(1.1)).catch(() => {});
+          if (preview.mosaicTag && layer.type === 'imagery') {
+            stretchPreviewToItem(layer, preview.mosaicTag, key, preview.rasterId);
+            return;
+          }
+          if (publishRamp()) return;
+          const handle = layer.watch('renderer', () => {
+            if (publishRamp()) handle.remove();
+          });
+        });
+      } else if (preview.mosaicTag && layer.type === 'imagery') {
+        stretchPreviewToItem(layer, preview.mosaicTag, key, preview.rasterId);
+      } else if (!preview.legendRamp) {
+        const band = 'rasterInfo' in layer ? layer.rasterInfo?.statistics?.[0] : null;
+        const ramp = stretchLegendFromRenderer(layer.renderer, band);
+        if (ramp) {
+          setPreviews((current) =>
+            current.map((item) =>
+              item.rasterId === preview.rasterId
+                ? { ...item, legendRamp: ramp, legendLoaded: true }
+                : item,
+            ),
+          );
+        }
+      }
+      const swatches = preview.swatches;
+      if (swatches?.length) {
+        // A renderer assigned before the layer finishes loading is discarded
+        // by the SDK, which leaves the service's own unique-value colors on
+        // the map (they differ from the legend). Wait for the load.
+        const applyClassColors = () => {
+          if (previewLayersRef.current.get(key) !== layer) return;
+          if (layer.renderer?.type !== 'raster-colormap') {
+            layer.renderer = colormapRenderer(swatches);
+          }
+        };
+        if (layer.loaded) applyClassColors();
+        else layer.when(applyClassColors).catch(() => {});
+      }
+    }
+  }, [analysisExtent, isReady, previews, token]);
+
+  const visibleResultLegends = resultLegends.filter((legend) => {
+    const run = resultLayers.find((item) => item.jobId === legend.jobId);
+    return Boolean(run?.visible && (run.record || legend.swatches.length > 0));
+  });
+  const suitabilityRampColorList = suitabilityRampColors();
 
   return (
-    <div id="experience-map-area" className="relative min-w-0 flex-1 bg-gray-100">
+    <div id="experience-map-area" className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-gray-100">
       <div ref={mapDivRef} className="absolute inset-0" />
 
-      <div
+      <CollapsibleSection
         id="experience-layer-list"
-        className="absolute right-3 top-3 z-10 flex max-h-[calc(100%-24px)] w-72 flex-col overflow-hidden rounded-card border border-gray-200 bg-white/95 shadow-lg"
+        variant="card"
+        title="Layers"
+        keepMounted
+        className="absolute right-3 top-3 z-10 max-h-[calc(100%-1.5rem)] w-72 bg-white/95 shadow-lg"
+        bodyClassName="!px-0 !py-0 flex flex-col"
       >
-        <div className="border-b border-gray-100 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-gray-500">
-          Layers
+        <ul className={previews.length > 0 ? 'border-b border-gray-100 px-3 py-2' : 'hidden'}>
+          {previews.map((preview) => (
+            <li key={preview.rasterId} className="truncate py-1 text-sm text-gray-800">
+              {preview.title}
+            </li>
+          ))}
+        </ul>
+        <div ref={layerListHostRef} className="max-h-64 min-h-0 overflow-y-auto" />
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        id="experience-legend"
+        variant="card"
+        title="Legend"
+        className="absolute bottom-8 left-3 z-10 max-h-[45%] w-72 bg-white/95 shadow-lg"
+        bodyClassName="overflow-y-auto"
+      >
+        <div>
+          {previews.length === 0 && !visibleResultLegends.length && !analysisExtent && (
+            <p className="py-2 text-sm text-gray-500">Preview a layer to see its legend.</p>
+          )}
+          {visibleResultLegends.map((legend) => {
+            const scaleMax = resultLayers.find((item) => item.jobId === legend.jobId)?.record?.scaleMax;
+            return (
+            <section key={legend.jobId} className="mb-3 last:mb-0">
+              <h4 className="mb-1.5 break-words text-sm font-semibold text-gray-900">{legend.title}</h4>
+              {scaleMax != null && (
+                <div className="flex items-stretch gap-2">
+                  <div
+                    className="h-28 w-4 flex-shrink-0 rounded-sm border border-black/10"
+                    style={{ background: `linear-gradient(to top, ${suitabilityRampColorList.join(', ')})` }}
+                  />
+                  <div className="flex flex-col justify-between py-0.5 text-xs text-gray-600">
+                    <span>{scaleMax} (high suitability)</span>
+                    <span>1 (low suitability)</span>
+                  </div>
+                </div>
+              )}
+              {scaleMax == null && legend.swatches.length > 0 && (
+                <ul className="flex flex-col gap-1">
+                  {legend.swatches.map((swatch) => (
+                    <li key={`${swatch.label}-${swatch.imageData.slice(0, 12)}`} className="flex items-center gap-2">
+                      <img
+                        src={`data:${swatch.contentType};base64,${swatch.imageData}`}
+                        alt=""
+                        className="h-4 w-6 flex-shrink-0 object-contain"
+                      />
+                      <span className="break-words text-sm text-gray-700">{swatch.label}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+            );
+          })}
+          {analysisExtent && (
+            <section className="mb-3 last:mb-0">
+              <h4 className="mb-1.5 break-words text-sm font-semibold text-gray-900">
+                {ANALYSIS_EXTENT_BOUNDARIES[analysisExtent].title}
+              </h4>
+              <div className="flex items-center gap-2">
+                <span className="inline-block h-4 w-8 flex-shrink-0 rounded-sm border-2 border-white bg-gray-600" />
+                <span className="text-sm text-gray-700">Analysis extent</span>
+              </div>
+            </section>
+          )}
+          {previews.map((preview) => (
+            <section key={preview.rasterId} className="mb-3 last:mb-0">
+              <h4 className="mb-1.5 break-words text-sm font-semibold text-gray-900">{preview.title}</h4>
+              {preview.swatches?.length ? (
+                <ul className="flex flex-col gap-1">
+                  {preview.swatches.map((swatch) => (
+                    <li key={swatch.value} className="flex items-center gap-2">
+                      <span
+                        className="h-3.5 w-3.5 flex-shrink-0 rounded-sm border border-black/10"
+                        style={{ backgroundColor: `rgb(${swatch.color[0]}, ${swatch.color[1]}, ${swatch.color[2]})` }}
+                      />
+                      <span className="break-words text-sm text-gray-700">{swatch.label}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : preview.legendRamp ? (
+                <div className="flex items-stretch gap-2">
+                  <div
+                    className="h-28 w-4 flex-shrink-0 rounded-sm border border-black/10"
+                    style={{
+                      background: `linear-gradient(to top, ${preview.legendRamp.colors.join(', ')})`,
+                    }}
+                  />
+                  <div className="flex flex-col justify-between py-0.5 text-xs text-gray-600">
+                    <span>{formatHistogramValue(preview.legendRamp.max)}</span>
+                    <span>{formatHistogramValue(preview.legendRamp.min)}</span>
+                  </div>
+                </div>
+              ) : !preview.legendLoaded ? (
+                <p className="text-sm text-gray-500">Loading legend…</p>
+              ) : (
+                <p className="text-sm text-gray-500">Continuous values</p>
+              )}
+            </section>
+          ))}
         </div>
-        <div ref={layerListRef} className="min-h-[48px] overflow-y-auto" />
-      </div>
+      </CollapsibleSection>
 
       {!isReady && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-gray-100">

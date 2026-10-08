@@ -227,10 +227,14 @@ export function createTNCArcGISLayer(options: {
         visible,
       });
     }
+    const isRasterStack = meta.catalogTag === 'imagery_mosaic';
     return new ImageryLayer({
       id,
       url,
       visible,
+      // Multiband raster stacks are coarse grids. Bilinear resampling blurs
+      // cell boundaries when the map zooms past the native resolution.
+      ...(isRasterStack ? { interpolation: 'nearest' as const } : {}),
     });
   }
 

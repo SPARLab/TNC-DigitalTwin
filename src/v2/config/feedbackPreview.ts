@@ -4,7 +4,7 @@
 // ============================================================================
 
 /** When true: hide sign-in; Experiences + Notebooks are under construction. */
-export const FEEDBACK_PREVIEW_MODE = true;
+export const FEEDBACK_PREVIEW_MODE = false;
 
 export function isFeedbackPreviewLockedPath(path: string): boolean {
   if (!FEEDBACK_PREVIEW_MODE) return false;

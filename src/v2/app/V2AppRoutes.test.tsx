@@ -40,6 +40,7 @@ describe('V2AppRoutes', () => {
   });
 
   it.each([
+    ['/about', 'Dangermond Preserve Digital Twin'],
     ['/catalog', 'Catalog Workbench'],
     ['/monitoring', 'Live Monitoring'],
     ['/experiences', 'Experiences'],
@@ -63,11 +64,11 @@ describe('V2AppRoutes', () => {
     expect(screen.getByTitle('Live Monitoring')).not.toHaveAttribute('aria-current');
   });
 
-  it('greys out Experiences and Notebooks while feedback preview mode is on', () => {
+  it('enables Experiences and Notebooks when feedback preview mode is off', () => {
     renderAt('/');
 
-    expect(screen.getByTitle('Experiences — under construction')).toBeDisabled();
-    expect(screen.getByTitle('Notebooks — under construction')).toBeDisabled();
+    expect(screen.getByTitle('Experiences')).toBeEnabled();
+    expect(screen.getByTitle('Notebooks')).toBeEnabled();
   });
 
   it('navigates when a nav rail item is clicked', async () => {
@@ -97,11 +98,11 @@ describe('V2AppRoutes', () => {
     );
   });
 
-  it('shows under construction for experience routes during feedback preview', () => {
+  it('opens an experience workspace when preview mode is off', () => {
     renderAt('/experiences/suitability');
 
-    expect(screen.getByRole('heading', { name: 'Experiences' })).toBeInTheDocument();
-    expect(screen.getByText('Under construction')).toBeInTheDocument();
+    expect(screen.queryByText('Under construction')).not.toBeInTheDocument();
+    expect(screen.getByText('Experience Map')).toBeInTheDocument();
   });
 
   it('redirects unknown paths back to the landing page', () => {

@@ -164,11 +164,13 @@ export function LayerPicker({
                         }`}
                       >
                         <div className="min-w-0 flex-1">
-                          <p className="flex items-center gap-1 text-xs font-medium text-gray-800">
+                          <p className="flex items-start gap-1 text-xs font-medium text-gray-800">
                             {isFavorite && (
-                              <Star className="h-3 w-3 flex-shrink-0 fill-amber-500 text-amber-500" />
+                              <Star className="mt-0.5 h-3 w-3 flex-shrink-0 fill-amber-500 text-amber-500" />
                             )}
-                            <span className="truncate">{raster.title}</span>
+                            <span className="min-w-0 break-words whitespace-normal">
+                              {raster.title}
+                            </span>
                           </p>
                           <p className="text-[10px] text-gray-500">
                             {raster.units === 'category' ? 'Categorical' : 'Continuous'}

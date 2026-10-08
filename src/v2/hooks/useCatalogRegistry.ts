@@ -781,39 +781,26 @@ export function useCatalogRegistry(): CatalogRegistryState {
           childrenByParent.set(c.parent_id!, arr);
         }
 
-        // Build Category objects
-        const categories: Category[] = topLevel.map(raw => {
+        // Build Category objects. Climate (and a few others) nest more than
+        // one level — e.g. Climate → CHELSA → Baseline — so attach every
+        // descendant, not only direct children of the top-level categories.
+        const buildCategoryNode = (raw: RawCategory, fallbackIcon: string): Category => {
           const catId = String(raw.id);
-          const icon = CATEGORY_ICON_MAP[raw.name] ?? raw.icon ?? 'Folder';
-
-          // Layers directly in this top-level category
-          const directDatasetIds = catToDatasets.get(raw.id) ?? [];
-          const directLayers = buildLayersForCategory(directDatasetIds, catId);
-
-          // Subcategories
+          const icon = CATEGORY_ICON_MAP[raw.name] ?? raw.icon ?? fallbackIcon;
+          const datasetIds = catToDatasets.get(raw.id) ?? [];
           const subs = childrenByParent.get(raw.id) ?? [];
-          const           subcategories: Category[] = subs.map(sub => {
-            const subCatId = String(sub.id);
-            const subIcon = CATEGORY_ICON_MAP[sub.name] ?? sub.icon ?? icon;
-            const subDatasetIds = catToDatasets.get(sub.id) ?? [];
-            const subLayers = buildLayersForCategory(subDatasetIds, subCatId);
-            return {
-              id: subCatId,
-              name: CATEGORY_DISPLAY_NAME_OVERRIDE[sub.name] ?? sub.name,
-              icon: subIcon,
-              layers: subLayers,
-              parentId: catId,
-            };
-          });
-
+          const subcategories = subs.map((sub) => buildCategoryNode(sub, icon));
           return {
             id: catId,
             name: CATEGORY_DISPLAY_NAME_OVERRIDE[raw.name] ?? raw.name,
             icon,
-            layers: directLayers,
+            layers: buildLayersForCategory(datasetIds, catId),
             subcategories: subcategories.length > 0 ? subcategories : undefined,
+            parentId: raw.parent_id != null ? String(raw.parent_id) : undefined,
           };
-        });
+        };
+
+        const categories: Category[] = topLevel.map((raw) => buildCategoryNode(raw, 'Folder'));
 
         // ── Inject synthetic external layers ─────────────────────────────
         for (const ext of EXTERNAL_LAYERS) {
@@ -824,15 +811,17 @@ export function useCatalogRegistry(): CatalogRegistryState {
             continue;
           }
 
-          // External layers may target subcategories (for example,
-          // Observations under Species). Handle one-level nested placement.
-          for (const parent of categories) {
-            const sub = parent.subcategories?.find(s => s.id === ext.categoryId);
-            if (sub) {
-              sub.layers.push(ext);
-              break;
+          // External layers may target a nested category (for example,
+          // Observations under Species).
+          const findCategory = (nodes: Category[]): Category | undefined => {
+            for (const node of nodes) {
+              if (node.id === ext.categoryId) return node;
+              const nested = node.subcategories ? findCategory(node.subcategories) : undefined;
+              if (nested) return nested;
             }
-          }
+            return undefined;
+          };
+          findCategory(categories)?.layers.push(ext);
         }
 
         // ── Filter out empty "Uncategorized" if it has no layers ─────────

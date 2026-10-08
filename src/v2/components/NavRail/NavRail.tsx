@@ -1,6 +1,7 @@
 // ============================================================================
-// NavRail — collapsible platform navigation rail (Home / Catalog / Monitoring /
-// Experiences / Notebooks). Ported from the twin_models webapp mockup sidebar.
+// NavRail — collapsible platform navigation rail (Home / About / Catalog /
+// Monitoring / Experiences / Notebooks). Ported from the twin_models webapp
+// mockup sidebar.
 // ============================================================================
 
 import { useLocation, useNavigate } from 'react-router-dom';

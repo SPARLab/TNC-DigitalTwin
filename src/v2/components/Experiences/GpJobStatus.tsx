@@ -1,9 +1,9 @@
 // ============================================================================
-// GpJobStatus — poll a submitted geoprocessing job and offer a .tif download
-// once it succeeds.
+// GpJobStatus — poll a submitted geoprocessing job and offer PNG and TIFF
+// downloads once it succeeds.
 // ============================================================================
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -12,7 +12,13 @@ import {
   Loader2,
   XCircle,
 } from 'lucide-react';
-import { parseJobFilename, pollGpJob } from '../../services/geoprocessingService';
+import {
+  fetchGpJobPngUrl,
+  fetchGpOutputMapImage,
+  fetchGpRunAnalysis,
+  pollGpJob,
+  tiffUrlFromMessages,
+} from '../../services/geoprocessingService';
 import type { GpJobRecord, GpMessage, ResultLayerInfo } from './types';
 
 const POLL_MS = 5000;
@@ -35,6 +41,8 @@ interface GpJobStatusProps {
   task: string;
   token: string | null;
   onLayerAdded?: (info: ResultLayerInfo) => void;
+  /** Called whenever the job status changes, including the first status. */
+  onStatusChange?: (status: string) => void;
 }
 
 export function GpJobStatus({
@@ -43,14 +51,26 @@ export function GpJobStatus({
   task,
   token,
   onLayerAdded,
+  onStatusChange,
 }: GpJobStatusProps) {
   const [status, setStatus] = useState(job.status);
+  const onStatusChangeRef = useRef(onStatusChange);
+  onStatusChangeRef.current = onStatusChange;
+
+  useEffect(() => {
+    onStatusChangeRef.current?.(status);
+  }, [status]);
   const [messages, setMessages] = useState<GpMessage[]>([]);
-  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [pngUrl, setPngUrl] = useState<string | null>(null);
+  const [tifUrl, setTifUrl] = useState<string | null>(null);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     let isCancelled = false;
+    setPngUrl(null);
+    setTifUrl(null);
+    setStatus(job.status);
+    setMessages([]);
 
     const tick = async () => {
       const snapshot = await pollGpJob(serviceUrl, task, job.id, token);
@@ -60,11 +80,34 @@ export function GpJobStatus({
       setMessages(snapshot.messages);
 
       if (snapshot.status === 'esriJobSucceeded') {
-        const filename =
-          parseJobFilename(snapshot.messages, job.filenamePattern) ?? job.defaultFilename;
-        const tifUrl = `${job.jobsDirectory}/${job.id}/scratch/${encodeURIComponent(filename)}`;
-        setDownloadUrl(token ? `${tifUrl}?token=${token}` : tifUrl);
-        onLayerAdded?.(job.result);
+        const extent = await fetchGpOutputMapImage(
+          serviceUrl,
+          task,
+          job.id,
+          'output_raster',
+          token,
+        ).catch(() => null);
+        if (isCancelled) return;
+        const tifUrl = tiffUrlFromMessages(snapshot.messages);
+        let pngUrl: string | null = null;
+        if (extent) {
+          pngUrl = await fetchGpJobPngUrl(job.result.mapServerUrl, job.id, extent);
+          if (isCancelled) return;
+        }
+        // Only the suitability overlay writes this. Other tools just return null.
+        const analysis = job.result.record
+          ? await fetchGpRunAnalysis(serviceUrl, task, job.id, token).catch(() => null)
+          : null;
+        if (isCancelled) return;
+        setPngUrl(pngUrl);
+        setTifUrl(tifUrl);
+        onLayerAdded?.({
+          ...job.result,
+          summary: job.summary,
+          pngUrl,
+          tifUrl,
+          analysis,
+        });
         return;
       }
 
@@ -141,16 +184,31 @@ export function GpJobStatus({
         </div>
       )}
 
-      {downloadUrl && (
-        <a
-          href={downloadUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 hover:text-emerald-800"
-        >
-          <Download className="h-3.5 w-3.5" />
-          Download .tif
-        </a>
+      {(pngUrl || tifUrl) && (
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          {pngUrl && (
+            <a
+              href={pngUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 hover:text-emerald-800"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Download PNG
+            </a>
+          )}
+          {tifUrl && (
+            <a
+              href={tifUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 hover:text-emerald-800"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Download TIFF
+            </a>
+          )}
+        </div>
       )}
     </div>
   );

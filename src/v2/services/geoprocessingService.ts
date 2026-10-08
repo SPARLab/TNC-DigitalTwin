@@ -7,13 +7,20 @@
 // ============================================================================
 
 import {
+  ARCGIS_SERVER_URL,
   DATASETS_TABLE_URL,
   DEFAULT_SDM_INPUTS,
   GP_SERVICES,
   RASTERS_TABLE_URL,
   STORED_TOKEN_KEY,
 } from '../config/geoprocessing';
-import type { CatalogRaster, GpMessage, OccurrenceFeature } from '../components/Experiences/types';
+import type {
+  CatalogRaster,
+  GpMessage,
+  OccurrenceFeature,
+  SuitabilityRunAnalysis,
+} from '../components/Experiences/types';
+import { bioclimMosaicTag } from './mosaicSelection';
 
 export function readStoredArcGisToken(): string | null {
   try {
@@ -47,6 +54,8 @@ interface RasterRow {
   id: number | null;
   dataset_id: number | null;
   title: string | null;
+  /** Curated short label (e.g. "SSURGO Drainage Class"); often empty on climate bands. */
+  layer_name: string | null;
   url: string | null;
   resolution: number | null;
   scope: string | null;
@@ -66,6 +75,7 @@ const RASTER_FIELDS_WITHOUT_SCOPE = [
   'id',
   'dataset_id',
   'title',
+  'layer_name',
   'url',
   'resolution',
   'thematic_category',
@@ -85,28 +95,52 @@ function parseScope(value: string | null): CatalogRaster['scope'] {
   return null;
 }
 
+/** True when the string looks like a human label rather than a service slug / band code. */
+function isHumanRasterLabel(value: string): boolean {
+  return /\s/.test(value);
+}
+
+/**
+ * Prefer the short analysis label over service-style slugs.
+ *
+ * Order: human `layer_name` → human raster `title` → dataset `display_title` →
+ * any remaining layer_name / title. Dataset titles alone are not ideal for
+ * multi-band stacks (they collapse Bio01/Bio02 to one CHELSA name).
+ */
+export function pickRasterDisplayTitle(
+  row: Pick<RasterRow, 'title' | 'layer_name' | 'dataset_id'>,
+  displayTitles: Map<number, string> = new Map(),
+): string {
+  const layerName = row.layer_name?.trim() || '';
+  const rasterTitle = row.title?.trim() || '';
+  const fromDataset =
+    row.dataset_id != null ? displayTitles.get(row.dataset_id)?.trim() || '' : '';
+
+  if (layerName && isHumanRasterLabel(layerName)) return layerName;
+  if (rasterTitle && isHumanRasterLabel(rasterTitle)) return rasterTitle;
+  if (fromDataset) return fromDataset;
+  return layerName || rasterTitle || 'Untitled raster';
+}
+
 function mapRasterRows(
   rows: RasterRow[],
   displayTitles: Map<number, string>,
 ): CatalogRaster[] {
   return rows
     .filter((row) => row.is_active !== 0 && row.id != null && row.url)
-    .map((row) => {
-      const fromDataset =
-        row.dataset_id != null ? displayTitles.get(row.dataset_id)?.trim() : '';
-      return {
-        id: row.id as number,
-        title: fromDataset || row.title?.trim() || 'Untitled raster',
-        url: row.url as string,
-        resolution: row.resolution,
-        scope: parseScope(row.scope),
-        datasetId: row.dataset_id,
-        thematicCategory: row.thematic_category?.trim() || 'Other',
-        units: row.units?.trim() || '',
-        valueMin: row.value_min,
-        valueMax: row.value_max,
-      };
-    })
+    .map((row) => ({
+      id: row.id as number,
+      title: pickRasterDisplayTitle(row, displayTitles),
+      url: row.url as string,
+      resolution: row.resolution,
+      scope: parseScope(row.scope),
+      datasetId: row.dataset_id,
+      thematicCategory: row.thematic_category?.trim() || 'Other',
+      units: row.units?.trim() || '',
+      valueMin: row.value_min,
+      valueMax: row.value_max,
+      mosaicTag: bioclimMosaicTag(row.layer_name, row.title),
+    }))
     .sort((a, b) => a.title.localeCompare(b.title));
 }
 
@@ -283,6 +317,116 @@ export async function pollGpJob(
     status: data.jobStatus ?? 'esriJobSubmitted',
     messages: data.messages ?? [],
   };
+}
+
+export interface GpMapExtent {
+  xmin: number;
+  ymin: number;
+  xmax: number;
+  ymax: number;
+  spatialReference?: { wkid?: number; latestWkid?: number };
+}
+
+/** Result drawing the GP map service actually produced for an output raster. */
+export async function fetchGpOutputMapImage(
+  serviceUrl: string,
+  task: string,
+  jobId: string,
+  paramName: string,
+  token: string | null,
+): Promise<GpMapExtent | null> {
+  const params = new URLSearchParams({ f: 'json' });
+  appendToken(params, token);
+  const response = await fetch(
+    `${serviceUrl}/${encodeURIComponent(task)}/jobs/${jobId}/results/${encodeURIComponent(paramName)}?${params.toString()}`,
+  );
+  const data = await response.json();
+  const extent = data?.value?.mapImage?.extent as GpMapExtent | undefined;
+  if (!extent || !Number.isFinite(extent.xmin) || !Number.isFinite(extent.xmax)) return null;
+  return extent;
+}
+
+/**
+ * Name of the Weighted Raster Overlay output that carries the run analysis.
+ * Keep in sync with `name="run_analysis"` in suitability_modeler.pyt.
+ */
+export const RUN_ANALYSIS_PARAM = 'run_analysis';
+
+/**
+ * Accept the tool's JSON string (or an already parsed object). Returns null for
+ * anything that is not a run analysis, so older jobs and bad payloads are skipped.
+ */
+export function parseRunAnalysis(value: unknown): SuitabilityRunAnalysis | null {
+  let parsed: unknown = value;
+  if (typeof value === 'string') {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      return null;
+    }
+  }
+  if (!parsed || typeof parsed !== 'object') return null;
+  const candidate = parsed as Partial<SuitabilityRunAnalysis>;
+  if (candidate.type !== 'suitability_run_analysis') return null;
+  if (!Array.isArray(candidate.bands) || !candidate.histogram || !candidate.cells) return null;
+  return candidate as SuitabilityRunAnalysis;
+}
+
+/** Run analysis for a finished job, or null when the tool did not write one. */
+export async function fetchGpRunAnalysis(
+  serviceUrl: string,
+  task: string,
+  jobId: string,
+  token: string | null,
+): Promise<SuitabilityRunAnalysis | null> {
+  const params = new URLSearchParams({ f: 'json' });
+  appendToken(params, token);
+  const response = await fetch(
+    `${serviceUrl}/${encodeURIComponent(task)}/jobs/${jobId}/results/${encodeURIComponent(RUN_ANALYSIS_PARAM)}?${params.toString()}`,
+  );
+  const data = await response.json().catch(() => null);
+  if (!data || data.error) return null;
+  return parseRunAnalysis(data.value);
+}
+
+/**
+ * PNG the map service actually writes. Requesting format=tiff on this service
+ * still returns a .png href, so that response is never offered as a TIFF.
+ */
+export async function fetchGpJobPngUrl(
+  mapServerUrl: string,
+  jobId: string,
+  extent: GpMapExtent,
+): Promise<string | null> {
+  const sr = extent.spatialReference?.latestWkid ?? extent.spatialReference?.wkid ?? 32611;
+  const params = new URLSearchParams({
+    bbox: [extent.xmin, extent.ymin, extent.xmax, extent.ymax].join(','),
+    bboxSR: String(sr),
+    imageSR: String(sr),
+    size: '1024,1024',
+    format: 'png',
+    transparent: 'true',
+    f: 'json',
+  });
+  const response = await fetch(`${mapServerUrl}/jobs/${jobId}/export?${params.toString()}`);
+  const data = await response.json();
+  return typeof data?.href === 'string' && data.href.startsWith('http') ? data.href : null;
+}
+
+const PUBLIC_TIFF = /Public TIFF:\s*(\S+)/i;
+
+/** GeoTIFF copied into arcgisoutput by the suitability tool. */
+export function tiffUrlFromMessages(messages: GpMessage[]): string | null {
+  for (const message of [...messages].reverse()) {
+    const match = message.description?.match(PUBLIC_TIFF);
+    if (!match) continue;
+    const value = match[1].trim();
+    const url = /^https?:\/\//i.test(value)
+      ? value
+      : `${ARCGIS_SERVER_URL}/rest/directories/${value.replace(/^\/+/, '')}`;
+    if (/\.tiff?($|\?)/i.test(url)) return url;
+  }
+  return null;
 }
 
 export function parseJobFilename(
