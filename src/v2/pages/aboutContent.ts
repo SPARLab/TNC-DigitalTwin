@@ -1,14 +1,21 @@
 // ============================================================================
 // About page copy — description, contact topics, and team bios.
-// Add a photo by setting photoSrc to a file in public/ (for example
-// '/team/amy-frazier.jpg'). Until then the card shows initials.
+// Portraits live in public/people and are set with photoSrc (for example
+// '/people/amy_frazier.jpg'). A member without a photo shows initials.
 // ============================================================================
 
 /**
- * Inbox for the contact form. The form opens the visitor's email app with
- * the note filled in. Leave this blank until the team mailbox is chosen.
+ * Inbox for the contact sidebar. The address is kept as two parts and only joined
+ * when a visitor clicks the copy button, so it never appears as plain text in the
+ * page or the JavaScript bundle where simple email scrapers would find it.
+ * Leave either part blank to show a placeholder instead.
  */
-export const ABOUT_CONTACT_EMAIL = '';
+export const ABOUT_CONTACT_EMAIL_PARTS = ['spatial-admin', 'ucsb.edu'] as const;
+
+export function contactEmail(): string {
+  const [user, domain] = ABOUT_CONTACT_EMAIL_PARTS;
+  return user && domain ? `${user}@${domain}` : '';
+}
 
 export const ABOUT_HERO_IMAGE = '/landing.jpg';
 
@@ -37,8 +44,6 @@ export const CONTACT_TOPICS = [
   },
 ] as const;
 
-export type ContactTopicId = (typeof CONTACT_TOPICS)[number]['id'];
-
 export interface TeamMember {
   id: string;
   name: string;
@@ -51,36 +56,43 @@ export const TEAM_MEMBERS: TeamMember[] = [
   {
     id: 'amy-frazier',
     name: 'Amy Frazier',
+    photoSrc: '/people/amy_frazier.jpg',
     bio: 'Amy Frazier is a Professor and the Jack and Laura Dangermond Chair of Conservation at the University of California, Santa Barbara.',
   },
   {
     id: 'trisalyn-nelson',
     name: 'Trisalyn Nelson',
+    photoSrc: '/people/trisalyn_nelson.jpg',
     bio: 'Trisalyn Nelson is a Professor and the Jack and Laura Dangermond Chair of Geography at the University of California, Santa Barbara. She is also Director for the Center of Spatial Science at UCSB.',
   },
   {
     id: 'will-overbye-thompson',
     name: 'Will Overbye-Thompson',
+    photoSrc: '/people/will_overbye_thompson.jpg',
     bio: 'Will Overbye-Thompson is a GIS Researcher at the University of California, Santa Barbara and a GIS Developer with the Center of Spatial Science.',
   },
   {
     id: 'dan-willett',
     name: 'Dan Willett',
+    photoSrc: '/people/dan_willett.jpeg',
     bio: 'Dan Willett is a PhD Student at the University of California, Santa Barbara and a GIS Developer with the Center of Spatial Science.',
   },
   {
     id: 'sophia-leiker',
     name: 'Sophia Leiker',
+    photoSrc: '/people/sophia-leiker.jpg',
     bio: 'Sophia Leiker is the Spatial Data Science Associate at the Point Conception Institute, The Nature Conservancy’s research center at the Jack and Laura Dangermond Preserve.',
   },
   {
     id: 'kelly-easterday',
     name: 'Kelly Easterday',
+    photoSrc: '/people/kelly_easterday.jpg',
     bio: 'Kelly Easterday is the Director of Conservation Technology at the Point Conception Institute, The Nature Conservancy’s research center at the Jack and Laura Dangermond Preserve.',
   },
   {
     id: 'mark-reynolds',
     name: 'Mark Reynolds',
+    photoSrc: '/people/mark-reynolds.jpg',
     bio: 'Mark Reynolds is Director of the Point Conception Institute, The Nature Conservancy’s research center at the Jack and Laura Dangermond Preserve.',
   },
 ];
@@ -90,23 +102,4 @@ export function initialsFor(name: string): string {
   const first = parts[0]?.[0] ?? '';
   const last = parts.length > 1 ? parts[parts.length - 1]?.[0] ?? '' : '';
   return `${first}${last}`.toUpperCase();
-}
-
-export function buildContactMailto(input: {
-  to: string;
-  topicLabel: string;
-  name: string;
-  replyEmail: string;
-  message: string;
-}): string {
-  const subject = `${input.topicLabel} — Dangermond Preserve Digital Twin`;
-  const body = [
-    `Name: ${input.name.trim()}`,
-    `Email: ${input.replyEmail.trim()}`,
-    `Topic: ${input.topicLabel}`,
-    '',
-    input.message.trim(),
-  ].join('\n');
-
-  return `mailto:${input.to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }

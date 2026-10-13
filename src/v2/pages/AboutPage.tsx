@@ -2,21 +2,31 @@
 // AboutPage — preserve introduction, contact, and team.
 // ============================================================================
 
-import { useState, type FormEvent } from 'react';
-import { Mail } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Check, Mail } from 'lucide-react';
 import {
-  ABOUT_CONTACT_EMAIL,
   ABOUT_HERO_IMAGE,
   ABOUT_PARAGRAPHS,
   CONTACT_TOPICS,
   TEAM_MEMBERS,
-  buildContactMailto,
+  contactEmail,
   initialsFor,
-  type ContactTopicId,
 } from './aboutContent';
 
-const inputClassName =
-  'w-full rounded-button border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:outline-none';
+const sectionHeadingClassName = 'text-2xl font-semibold tracking-tight text-gray-900 2xl:text-3xl';
+
+/** Section title with a thin full-width rule and an emerald accent under the text. */
+function SectionHeading({ children }: { children: ReactNode }) {
+  return (
+    <div className="border-b border-gray-200">
+      <h2
+        className={`${sectionHeadingClassName} -mb-px inline-block border-b-[3px] border-emerald-700 pb-2`}
+      >
+        {children}
+      </h2>
+    </div>
+  );
+}
 
 export function AboutPage() {
   return (
@@ -57,185 +67,146 @@ export function AboutPage() {
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-8 py-10">
-        <section id="about-description" className="flex flex-col gap-4">
-          {ABOUT_PARAGRAPHS.map((paragraph) => (
-            <p key={paragraph.slice(0, 24)} className="text-[15px] leading-relaxed text-gray-700">
-              {paragraph}
-            </p>
-          ))}
-        </section>
+      <div className="mx-auto grid w-full max-w-6xl gap-10 px-8 pb-20 pt-12 lg:grid-cols-[minmax(0,1fr)_300px] xl:max-w-7xl xl:grid-cols-[minmax(0,1fr)_340px] 2xl:max-w-[1680px] 2xl:grid-cols-[minmax(0,1fr)_400px] 2xl:gap-14 lg:items-start">
+        <div className="flex min-w-0 flex-col gap-14 xl:gap-16 2xl:gap-20">
+          <section id="about-description" className="flex flex-col gap-4">
+            <SectionHeading>About the platform</SectionHeading>
+            {ABOUT_PARAGRAPHS.map((paragraph) => (
+              <p key={paragraph.slice(0, 24)} className="text-[15px] leading-relaxed text-gray-700 lg:text-base xl:text-lg 2xl:text-xl">
+                {paragraph}
+              </p>
+            ))}
+          </section>
 
-        <ContactSection />
-      </div>
+          <TeamSection />
+        </div>
 
-      <div className="mx-auto w-full max-w-5xl px-8 pb-16">
-        <TeamSection />
+        <ContactSidebar />
       </div>
     </div>
   );
 }
 
-function ContactSection() {
-  const [topicId, setTopicId] = useState<ContactTopicId>('questions');
-  const [name, setName] = useState('');
-  const [replyEmail, setReplyEmail] = useState('');
-  const [message, setMessage] = useState('');
-  const [notice, setNotice] = useState<string | null>(null);
-
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const topic = CONTACT_TOPICS.find((item) => item.id === topicId);
-    if (!topic || !name.trim() || !replyEmail.trim() || !message.trim()) {
-      setNotice('Add your name, email, and a message so we know how to reply.');
-      return;
-    }
-    if (!ABOUT_CONTACT_EMAIL) {
-      setNotice('The team inbox is not connected yet.');
-      return;
-    }
-
-    window.location.href = buildContactMailto({
-      to: ABOUT_CONTACT_EMAIL,
-      topicLabel: topic.label,
-      name,
-      replyEmail,
-      message,
-    });
-    setNotice('Your email app should open with this message ready to send.');
-  }
-
+function ContactSidebar() {
   return (
-    <section id="about-contact" className="rounded-card border border-gray-200 bg-white p-5 shadow-sm">
+    <aside
+      id="about-contact"
+      aria-label="Contact information"
+      className="rounded-card border border-gray-200 bg-white p-5 shadow-sm lg:sticky lg:top-6"
+    >
       <div className="flex items-start gap-3">
         <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-800">
           <Mail className="h-4 w-4" aria-hidden />
         </span>
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Contact us</h2>
-          <p className="mt-1 text-sm leading-relaxed text-gray-600">
+          <h2 className="text-lg font-semibold text-gray-900 xl:text-xl 2xl:text-2xl">Contact us</h2>
+          <p className="mt-1 text-sm leading-relaxed text-gray-600 xl:text-base 2xl:text-lg">
             Questions, feedback, and requests for new functionality or data are welcome.
           </p>
         </div>
       </div>
 
-      <form id="about-contact-form" className="mt-5 flex flex-col gap-4" onSubmit={onSubmit}>
-        <fieldset>
-          <legend className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-            What is this about?
-          </legend>
-          <div className="mt-2 grid gap-2 lg:grid-cols-3">
-            {CONTACT_TOPICS.map((topic) => {
-              const isSelected = topic.id === topicId;
-              return (
-                <button
-                  key={topic.id}
-                  id={`about-contact-topic-${topic.id}`}
-                  type="button"
-                  aria-pressed={isSelected}
-                  onClick={() => {
-                    setTopicId(topic.id);
-                    setNotice(null);
-                  }}
-                  className={`rounded-card border px-3 py-2.5 text-left transition-colors ${
-                    isSelected
-                      ? 'border-emerald-600 bg-emerald-50'
-                      : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/40'
-                  }`}
-                >
-                  <span className="block text-sm font-semibold text-gray-900">{topic.label}</span>
-                  <span className="mt-0.5 block text-xs leading-snug text-gray-600">
-                    {topic.description}
-                  </span>
-                </button>
-              );
-            })}
+      <dl id="about-contact-topics" className="mt-5 flex flex-col gap-3">
+        {CONTACT_TOPICS.map((topic) => (
+          <div key={topic.id}>
+            <dt className="text-sm font-semibold text-gray-900 xl:text-base 2xl:text-lg">{topic.label}</dt>
+            <dd className="mt-0.5 text-xs leading-snug text-gray-600 xl:text-sm 2xl:text-base">{topic.description}</dd>
           </div>
-        </fieldset>
+        ))}
+      </dl>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-xs font-medium text-gray-700" htmlFor="about-contact-name">
-            Name
-            <input
-              id="about-contact-name"
-              name="name"
-              type="text"
-              autoComplete="name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              className={inputClassName}
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs font-medium text-gray-700" htmlFor="about-contact-email">
-            Email
-            <input
-              id="about-contact-email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              value={replyEmail}
-              onChange={(event) => setReplyEmail(event.target.value)}
-              className={inputClassName}
-            />
-          </label>
-        </div>
+      <div className="mt-5 border-t border-gray-100 pt-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 xl:text-sm">Email</p>
+        <CopyEmailButton />
+      </div>    </aside>
+  );
+}
 
-        <label className="flex flex-col gap-1 text-xs font-medium text-gray-700" htmlFor="about-contact-message">
-          Message
-          <textarea
-            id="about-contact-message"
-            name="message"
-            rows={4}
-            value={message}
-            onChange={(event) => setMessage(event.target.value)}
-            className={`${inputClassName} resize-y`}
-          />
-        </label>
+type CopyStatus = 'idle' | 'copied' | 'blocked';
 
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            id="about-contact-submit"
-            type="submit"
-            className="rounded-button bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-800"
-          >
-            Send message
-          </button>
-          {notice && (
-            <p id="about-contact-notice" className="text-sm text-gray-600" role="status">
-              {notice}
-            </p>
-          )}
-        </div>
-      </form>
-    </section>
+/**
+ * Copies the team address to the clipboard. The address is not rendered until
+ * copying is blocked (for example on a non-secure page), so scrapers reading the
+ * page text do not find it.
+ */
+function CopyEmailButton() {
+  const [status, setStatus] = useState<CopyStatus>('idle');
+  const [address, setAddress] = useState('');
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => () => clearTimeout(resetTimer.current), []);
+
+  if (!contactEmail()) {
+    return (
+      <p id="about-contact-email" className="mt-1 text-sm text-gray-600 xl:text-base">
+        The team inbox will be listed here soon.
+      </p>
+    );
+  }
+
+  async function copy() {
+    const email = contactEmail();
+    clearTimeout(resetTimer.current);
+    try {
+      await navigator.clipboard.writeText(email);
+      setStatus('copied');
+      resetTimer.current = setTimeout(() => setStatus('idle'), 2500);
+    } catch {
+      setAddress(email);
+      setStatus('blocked');
+    }
+  }
+
+  const copied = status === 'copied';
+
+  return (
+    <div className="mt-2">
+      <button
+        id="about-contact-email"
+        type="button"
+        onClick={copy}
+        className="inline-flex items-center gap-2 rounded-button border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-emerald-800 transition-colors hover:border-emerald-300 hover:bg-emerald-50 xl:text-base 2xl:text-lg"
+      >
+        {copied ? <Check className="h-4 w-4 shrink-0" aria-hidden /> : <Mail className="h-4 w-4 shrink-0" aria-hidden />}
+        {copied ? 'Email copied' : 'Copy email address'}
+      </button>
+      <p role="status" className="mt-2 text-sm text-gray-600 xl:text-base">
+        {status === 'blocked' && (
+          <>
+            Copying was blocked by your browser. Our address is{' '}
+            <span className="select-all break-all font-medium text-gray-900">{address}</span>.
+          </>
+        )}
+      </p>
+    </div>
   );
 }
 
 function TeamSection() {
   return (
     <section id="about-team">
-      <h2 className="text-lg font-semibold text-gray-900">Our team</h2>
-      <p className="mt-1 max-w-2xl text-sm text-gray-600">
+      <SectionHeading>Our team</SectionHeading>
+      <p className="mt-4 max-w-2xl text-sm text-gray-600 xl:text-base 2xl:max-w-3xl 2xl:text-lg">
         The Nature Conservancy’s Point Conception Institute and the Center for Spatial Science at UCSB.
       </p>
 
-      <ul className="mt-5 grid gap-4 lg:grid-cols-2">
+      <ul className="mt-6 grid auto-rows-fr gap-5 2xl:grid-cols-2">
         {TEAM_MEMBERS.map((member) => (
           <li
             key={member.id}
             id={`about-team-${member.id}`}
-            className="flex gap-4 rounded-card border border-gray-200 bg-white p-4"
+            className="flex items-center gap-5 rounded-card border border-gray-200 bg-white p-5 2xl:gap-6"
           >
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-100 text-sm font-semibold text-emerald-900">
+            <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-100 text-3xl font-semibold text-emerald-900 xl:h-40 xl:w-40 xl:text-4xl 2xl:h-48 2xl:w-48 2xl:text-5xl">
               {member.photoSrc ? (
-                <img src={member.photoSrc} alt="" className="h-full w-full object-cover" />
+                <img src={member.photoSrc} alt="" loading="lazy" className="h-full w-full object-cover" />
               ) : (
                 <span aria-hidden="true">{initialsFor(member.name)}</span>
               )}
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-gray-900">{member.name}</h3>
-              <p className="mt-1 text-sm leading-relaxed text-gray-600">{member.bio}</p>
+              <h3 className="text-sm font-semibold text-gray-900 xl:text-base 2xl:text-lg">{member.name}</h3>
+              <p className="mt-1 text-sm leading-relaxed text-gray-600 xl:text-base 2xl:text-lg">{member.bio}</p>
             </div>
           </li>
         ))}

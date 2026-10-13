@@ -5,9 +5,8 @@
 // ============================================================================
 
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Leaf, LogIn, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Leaf, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
-import { FEEDBACK_PREVIEW_MODE } from '../../config/feedbackPreview';
 import { PLATFORM_NAV_ITEMS, isNavItemActive } from '../../config/navigation';
 
 const EXPANDED_STORAGE_KEY = 'v2-nav-rail-expanded';
@@ -135,31 +134,6 @@ export function NavRail() {
           );
         })}
       </ul>
-
-      {/* TEMP: login hidden while FEEDBACK_PREVIEW_MODE is on */}
-      {!FEEDBACK_PREVIEW_MODE && (
-        <div
-          id="nav-rail-footer"
-          className="flex flex-shrink-0 flex-col items-center gap-2 border-t border-white/10 px-2 py-3"
-        >
-          <button
-            id="nav-rail-sign-in-button"
-            type="button"
-            disabled
-            title="Sign-in is not available yet"
-            className={`flex cursor-not-allowed items-center justify-center rounded-md text-emerald-200/40 ${
-              isExpanded ? 'w-full gap-2 px-2.5 py-2' : 'h-10 w-10 flex-col gap-0.5'
-            }`}
-          >
-            <LogIn className="h-4 w-4 flex-shrink-0" />
-            {isExpanded ? (
-              <span className="truncate text-xs font-medium">Sign in (soon)</span>
-            ) : (
-              <span className="text-[9px] font-semibold uppercase tracking-wide">Login</span>
-            )}
-          </button>
-        </div>
-      )}
     </nav>
   );
 }

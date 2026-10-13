@@ -4,6 +4,7 @@
 
 import { Database, FlaskConical, Home, Info, NotebookPen, Radio } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { NOTEBOOKS_ENABLED } from './featureFlags';
 import { FEEDBACK_PREVIEW_MODE } from './feedbackPreview';
 
 export interface PlatformNavItem {
@@ -18,7 +19,7 @@ export interface PlatformNavItem {
   comingSoon?: boolean;
 }
 
-export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
+const ALL_PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
   {
     path: '/',
     label: 'Home',
@@ -58,6 +59,13 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     comingSoon: FEEDBACK_PREVIEW_MODE,
   },
 ];
+
+/** The nav items to show, without Notebooks when that page is hidden. */
+export function platformNavItems(notebooksEnabled: boolean = NOTEBOOKS_ENABLED): PlatformNavItem[] {
+  return ALL_PLATFORM_NAV_ITEMS.filter((item) => notebooksEnabled || item.path !== '/notebooks');
+}
+
+export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = platformNavItems();
 
 export function isNavItemActive(itemPath: string, currentPath: string): boolean {
   if (itemPath === '/') {
