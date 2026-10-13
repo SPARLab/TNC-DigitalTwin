@@ -1,28 +1,15 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { TEAM_MEMBERS, buildContactMailto, initialsFor } from './aboutContent';
+import { TEAM_MEMBERS, initialsFor } from './aboutContent';
 
 describe('about content', () => {
-  it('builds a mailto link with the selected topic and message', () => {
-    const href = buildContactMailto({
-      to: 'team@example.org',
-      topicLabel: 'Feedback',
-      name: 'Ada Lovelace',
-      replyEmail: 'ada@example.org',
-      message: 'The map legend is hard to read.',
-    });
-
-    expect(href.startsWith('mailto:team@example.org?')).toBe(true);
-    expect(decodeURIComponent(href)).toContain('Feedback — Dangermond Preserve Digital Twin');
-    expect(decodeURIComponent(href)).toContain('Name: Ada Lovelace');
-    expect(decodeURIComponent(href)).toContain('The map legend is hard to read.');
-  });
-
   it('uses the first and last initials, including hyphenated surnames', () => {
     expect(initialsFor('Will Overbye-Thompson')).toBe('WO');
     expect(initialsFor('Amy Frazier')).toBe('AF');
   });
 
-  it('lists each team member once, ready for a portrait path', () => {
+  it('lists each team member once', () => {
     expect(TEAM_MEMBERS.map((member) => member.name)).toEqual([
       'Amy Frazier',
       'Trisalyn Nelson',
@@ -32,6 +19,12 @@ describe('about content', () => {
       'Kelly Easterday',
       'Mark Reynolds',
     ]);
-    expect(TEAM_MEMBERS.every((member) => member.photoSrc === undefined)).toBe(true);
+  });
+
+  it('points every team member at a portrait that exists in public/', () => {
+    for (const member of TEAM_MEMBERS) {
+      expect(member.photoSrc, member.name).toBeDefined();
+      expect(existsSync(join(process.cwd(), 'public', member.photoSrc ?? '')), member.name).toBe(true);
+    }
   });
 });
