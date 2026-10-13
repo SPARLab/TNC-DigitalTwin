@@ -26,6 +26,7 @@ import { resolveMosaicRule } from '../../services/mosaicSelection';
 import { fetchRasterHistogram, formatHistogramValue } from '../../services/rasterHistogram';
 import { continuousLegend, continuousStretchOptions, stretchLegendFromRenderer, type StretchLegend } from './stretchLegend';
 import { CollapsibleSection } from './CollapsibleSection';
+import { firstBandStatistics } from '../../services/layerRasterInfo';
 import { SUITABILITY_DISPLAY_SUBLAYER_TITLE, suitabilityRampColors } from './suitabilityRamp';
 import { isTiledImageServerUrl } from '../Map/layers/tncArcgisLayer';
 import { createPreserveOutlineLayer } from '../Monitoring/internal/boundaryOutlineLayer';
@@ -557,14 +558,16 @@ export function ExperienceMap({
           // Coarse analysis grids should keep hard cell edges.
           interpolation: 'nearest' as const,
         };
-        layer = isTiledImageServerUrl(preview.url)
+        // A const, so the closures below keep the non-undefined type.
+        const created = isTiledImageServerUrl(preview.url)
           ? new ImageryTileLayer(layerOptions)
           : new ImageryLayer(layerOptions);
-        map.add(layer);
-        previewLayersRef.current.set(key, layer);
+        layer = created;
+        map.add(created);
+        previewLayersRef.current.set(key, created);
         const publishRamp = () => {
-          const band = 'rasterInfo' in layer ? layer.rasterInfo?.statistics?.[0] : null;
-          const ramp = stretchLegendFromRenderer(layer.renderer, band);
+          const band = firstBandStatistics(created);
+          const ramp = stretchLegendFromRenderer(created.renderer, band);
           if (!ramp) return false;
           setPreviews((current) =>
             current.map((item) =>
@@ -575,22 +578,22 @@ export function ExperienceMap({
           );
           return true;
         };
-        layer.when(() => {
-          if (previewLayersRef.current.get(key) !== layer) return;
-          if (layer.fullExtent) view.goTo(layer.fullExtent.expand(1.1)).catch(() => {});
-          if (preview.mosaicTag && layer.type === 'imagery') {
-            stretchPreviewToItem(layer, preview.mosaicTag, key, preview.rasterId);
+        created.when(() => {
+          if (previewLayersRef.current.get(key) !== created) return;
+          if (created.fullExtent) view.goTo(created.fullExtent.expand(1.1)).catch(() => {});
+          if (preview.mosaicTag && created.type === 'imagery') {
+            stretchPreviewToItem(created, preview.mosaicTag, key, preview.rasterId);
             return;
           }
           if (publishRamp()) return;
-          const handle = layer.watch('renderer', () => {
+          const handle = created.watch('renderer', () => {
             if (publishRamp()) handle.remove();
           });
         });
       } else if (preview.mosaicTag && layer.type === 'imagery') {
         stretchPreviewToItem(layer, preview.mosaicTag, key, preview.rasterId);
       } else if (!preview.legendRamp) {
-        const band = 'rasterInfo' in layer ? layer.rasterInfo?.statistics?.[0] : null;
+        const band = firstBandStatistics(layer);
         const ramp = stretchLegendFromRenderer(layer.renderer, band);
         if (ramp) {
           setPreviews((current) =>

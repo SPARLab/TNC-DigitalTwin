@@ -40,7 +40,9 @@ function buildService(datasetId: number, layers: Array<{ id: number; name: strin
   const parentId = `service-${datasetId}`;
   const siblings = layers.map((layer) => child(datasetId, layer.id, layer.name, parentId));
   for (const sibling of siblings) {
-    sibling.catalogMeta!.siblingLayers = siblings.filter((entry) => entry.id !== sibling.id);
+    (sibling.catalogMeta as { siblingLayers?: CatalogLayer[] }).siblingLayers = siblings.filter(
+      (entry) => entry.id !== sibling.id,
+    );
   }
   const parent: CatalogLayer = {
     id: parentId,
@@ -115,7 +117,9 @@ function buildExpandedService(
   }));
   const siblings = [stations, ...measureLayers];
   for (const sibling of siblings) {
-    sibling.catalogMeta!.siblingLayers = siblings.filter((entry) => entry.id !== sibling.id);
+    (sibling.catalogMeta as { siblingLayers?: CatalogLayer[] }).siblingLayers = siblings.filter(
+      (entry) => entry.id !== sibling.id,
+    );
   }
   const parent: CatalogLayer = {
     id: parentId,

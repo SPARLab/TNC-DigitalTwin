@@ -10,6 +10,7 @@ import ImageryLayer from '@arcgis/core/layers/ImageryLayer';
 import Extent from '@arcgis/core/geometry/Extent';
 import { ANALYSIS_EXTENT_BOUNDARIES } from '../components/Experiences/analysisExtentLayer';
 import type { RasterScope } from '../components/Experiences/types';
+import { layerRasterInfo } from './layerRasterInfo';
 import {
   mosaicRuleQueryValue,
   resolveMosaicRule,
@@ -462,9 +463,9 @@ async function histogramFromLayerPixels(options: {
 }): Promise<PixelHistogram> {
   const layer = imageryLayerFor(options.url, options.token, options.mosaicRule);
   await layer.load();
-  const pixelSize =
-    layer.rasterInfo?.pixelSize?.x || options.resolutionMeters || 100;
-  const noData = layer.rasterInfo?.noDataValue;
+  const rasterInfo = layerRasterInfo(layer);
+  const pixelSize = rasterInfo?.pixelSize?.x || options.resolutionMeters || 100;
+  const noData = rasterInfo?.noDataValue;
   const noDataValue = typeof noData === 'number' ? noData : null;
   const sample = sampleDimensions(
     options.extent.xmax - options.extent.xmin,

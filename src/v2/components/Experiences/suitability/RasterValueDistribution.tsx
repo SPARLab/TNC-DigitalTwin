@@ -167,7 +167,7 @@ export function RasterValueDistribution({
           series: [
             {
               type: 'custom',
-              renderItem: (params, api) => {
+              renderItem: (_params, api) => {
                 const start = api.coord([api.value(0), api.value(2)]);
                 const end = api.coord([api.value(1), 0]);
                 const width = end[0] - start[0];

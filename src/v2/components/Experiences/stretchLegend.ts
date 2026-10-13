@@ -53,10 +53,11 @@ interface RampLike {
 
 function cssColor(color: ColorLike | number[] | null | undefined): string | null {
   if (!color) return null;
-  if (Array.isArray(color) && color.length >= 3) {
+  if (Array.isArray(color)) {
+    if (color.length < 3) return null;
     return `rgb(${Math.round(Number(color[0]))}, ${Math.round(Number(color[1]))}, ${Math.round(Number(color[2]))})`;
   }
-  if (typeof color === 'object' && color.r != null && color.g != null && color.b != null) {
+  if (color.r != null && color.g != null && color.b != null) {
     return `rgb(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)})`;
   }
   return null;

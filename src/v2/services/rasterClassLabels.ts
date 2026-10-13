@@ -433,7 +433,13 @@ async function inflateZlib(data: Uint8Array): Promise<ArrayBuffer> {
       controller.close();
     },
   });
-  const decompressed = source.pipeThrough(new DecompressionStream('deflate'));
+  // The DOM typings declare DecompressionStream over BufferSource, which does
+  // not line up with a Uint8Array pipe; the runtime behavior is the same.
+  const inflater = new DecompressionStream('deflate') as unknown as ReadableWritablePair<
+    Uint8Array,
+    Uint8Array
+  >;
+  const decompressed = source.pipeThrough(inflater);
   const reader = decompressed.getReader();
   const parts: Uint8Array[] = [];
   let total = 0;
