@@ -10,6 +10,7 @@ import { createINaturalistLayer } from './inaturalistLayer';
 import { createPreserveBoundaryLayer } from './preserveBoundaryLayer';
 import { createDendraLayer } from './dendraLayer';
 import { createAnimlLayer } from './animlLayer';
+import { createPhenoCamLayer } from './phenocamLayer';
 import { createTNCArcGISLayer } from './tncArcgisLayer';
 import { createDataOneLayer } from './dataoneLayer';
 import { createCalFloraLayer } from './calFloraLayer';
@@ -36,6 +37,8 @@ const gbifLayerIds = new Set<string>();
 const droneLayerIds = new Set<string>();
 /** Layer IDs known to be ANiML camera-trap services (detected via catalog_tag) */
 const animlLayerIds = new Set<string>();
+/** Layer IDs known to be PhenoCam imagery services (detected via catalog_tag) */
+const phenocamLayerIds = new Set<string>();
 /** Layer IDs known to be DataONE dataset services (detected via catalog_tag) */
 const dataoneLayerIds = new Set<string>();
 /** Layer IDs known to be TNC ArcGIS catalog layers (detected dynamically) */
@@ -80,6 +83,17 @@ export function registerAnimlLayerId(layerId: string): void {
 /** Check if a layer ID is a registered ANiML layer */
 export function isAnimlLayer(layerId: string): boolean {
   return animlLayerIds.has(layerId);
+}
+
+/** Register a layer ID as a PhenoCam imagery layer. */
+export function registerPhenoCamLayerId(layerId: string): void {
+  phenocamLayerIds.add(layerId);
+  IMPLEMENTED_LAYERS.add(layerId);
+}
+
+/** Check if a layer ID is a registered PhenoCam layer */
+export function isPhenoCamLayer(layerId: string): boolean {
+  return phenocamLayerIds.has(layerId);
 }
 
 /** Register a layer ID as a DataONE datasets layer. */
@@ -129,6 +143,9 @@ export function createMapLayer(layerId: string, options: {
       }
       if (animlLayerIds.has(layerId) || layerId === 'animl-camera-traps') {
         return createAnimlLayer({ id: `v2-${layerId}`, ...options });
+      }
+      if (phenocamLayerIds.has(layerId)) {
+        return createPhenoCamLayer({ id: `v2-${layerId}`, ...options });
       }
       if (dataoneLayerIds.has(layerId) || layerId === 'dataone-datasets' || layerId === 'dataset-216') {
         return createDataOneLayer({ id: `v2-${layerId}`, ...options });

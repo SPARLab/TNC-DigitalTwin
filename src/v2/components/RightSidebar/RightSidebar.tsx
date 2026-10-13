@@ -230,6 +230,7 @@ export function RightSidebar() {
             activeTab={activeTab}
             onTabChange={handleUserTabChange}
             showBrowseTab={showBrowseTab}
+            browseTabLabel={adapter?.browseTabLabel}
           />
 
           {/* Tab content — delegated to data source adapter */}

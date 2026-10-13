@@ -2,7 +2,7 @@
 // Platform navigation — single source of truth for the nav rail.
 // ============================================================================
 
-import { Database, FlaskConical, Home, NotebookPen, Radio } from 'lucide-react';
+import { Database, FlaskConical, Home, Info, NotebookPen, Radio } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { FEEDBACK_PREVIEW_MODE } from './feedbackPreview';
 
@@ -24,6 +24,12 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     label: 'Home',
     shortLabel: 'Home',
     icon: Home,
+  },
+  {
+    path: '/about',
+    label: 'About',
+    shortLabel: 'Info',
+    icon: Info,
   },
   {
     path: '/catalog',

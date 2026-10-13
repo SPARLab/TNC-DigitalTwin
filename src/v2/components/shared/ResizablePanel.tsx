@@ -49,6 +49,11 @@ interface ResizablePanelProps {
    * narrowing a panel should crop it, not shrink the text.
    */
   maxScale?: number;
+  /**
+   * Keep the contents mounted (just hidden) while collapsed, so in-progress
+   * form state survives. Off by default: collapsed panels unmount.
+   */
+  keepMounted?: boolean;
   children: ReactNode;
 }
 
@@ -71,6 +76,7 @@ export const ResizablePanel = forwardRef<ResizablePanelHandle, ResizablePanelPro
       maxWidth,
       label,
       maxScale = DEFAULT_MAX_SCALE,
+      keepMounted = false,
       children,
     },
     ref,
@@ -207,12 +213,17 @@ export const ResizablePanel = forwardRef<ResizablePanelHandle, ResizablePanelPro
           isCollapsed ? '' : isLeft ? 'border-r border-gray-200' : 'border-l border-gray-200'
         }`}
       >
-        {!isCollapsed && (
+        {(!isCollapsed || keepMounted) && (
           <div
             // Percentages inside a zoomed element already resolve against the
             // containing block divided by the zoom, so a plain 100% renders back to
             // the panel's full width. Dividing here as well would leave a gap.
-            style={{ zoom: scale, width: '100%', height: '100%' }}
+            style={{
+              zoom: scale,
+              width: '100%',
+              height: '100%',
+              display: isCollapsed ? 'none' : undefined,
+            }}
           >
             {children}
           </div>

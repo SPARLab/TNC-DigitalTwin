@@ -30,10 +30,10 @@ export function LandingPage() {
         <h1 className="text-[clamp(2rem,5vw,4rem)] font-extrabold leading-tight tracking-[-0.03em] text-white [text-shadow:0_2px_16px_rgba(0,0,0,0.5)]">
           Research Digital Twin of Nature
         </h1>
-        <p className="mt-1 text-2xl text-white/85 [text-shadow:0_1px_10px_rgba(0,0,0,0.4)]">
+        <p className="mt-1 text-[clamp(1.35rem,2.5vw,1.75rem)] text-white/90 [text-shadow:0_1px_10px_rgba(0,0,0,0.4)]">
           Jack and Laura Dangermond Preserve
         </p>
-        <p className="mt-5 max-w-[480px] text-[15px] leading-relaxed text-white/70 [text-shadow:0_1px_6px_rgba(0,0,0,0.3)]">
+        <p className="mt-5 max-w-[520px] text-[clamp(1rem,1.6vw,1.125rem)] leading-relaxed text-white/80 [text-shadow:0_1px_6px_rgba(0,0,0,0.3)]">
           A research platform enabling data discovery, ecological modeling, and
           scientific insights for the preservation of coastal biodiversity.
         </p>

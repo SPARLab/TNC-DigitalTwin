@@ -266,13 +266,14 @@ export function ExperiencesPage() {
   }
 
   return (
-    <div id="experiences-section" className="h-full w-full">
-      <div className={experience ? 'hidden h-full' : 'h-full'}>
+    <div id="experiences-section" className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <div className={experience ? 'hidden h-full' : 'h-full min-h-0 overflow-y-auto'}>
         <ExperienceGallery />
       </div>
       {experience && (
-        <div className="h-full">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <ExperienceWorkspace
+            key={experience.id}
             experience={experience}
             onClose={() => navigate('/experiences')}
           />

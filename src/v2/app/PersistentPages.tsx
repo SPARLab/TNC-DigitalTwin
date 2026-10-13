@@ -10,6 +10,7 @@
 import { useEffect, useState, type ComponentType } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { LandingPage } from '../pages/LandingPage';
+import { AboutPage } from '../pages/AboutPage';
 import { CatalogWorkbench } from '../pages/CatalogWorkbench';
 import { MonitoringPage } from '../pages/MonitoringPage';
 import { ExperiencesPage } from '../pages/ExperiencesPage';
@@ -18,6 +19,7 @@ import { platformSectionFromPath, type PlatformSection } from './platformSection
 
 const SECTION_PAGES: Record<PlatformSection, ComponentType> = {
   home: LandingPage,
+  about: AboutPage,
   catalog: CatalogWorkbench,
   monitoring: MonitoringPage,
   experiences: ExperiencesPage,

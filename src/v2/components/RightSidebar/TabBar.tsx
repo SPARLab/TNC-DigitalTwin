@@ -8,6 +8,7 @@ interface TabBarProps {
   activeTab: SidebarTab;
   onTabChange: (tab: SidebarTab) => void;
   showBrowseTab?: boolean;
+  browseTabLabel?: string;
 }
 
 const TABS: { id: SidebarTab; label: string }[] = [
@@ -19,8 +20,13 @@ export function TabBar({
   activeTab,
   onTabChange,
   showBrowseTab = true,
+  browseTabLabel,
 }: TabBarProps) {
-  const tabs = showBrowseTab ? TABS : TABS.filter(tab => tab.id !== 'browse');
+  const tabs = (showBrowseTab ? TABS : TABS.filter(tab => tab.id !== 'browse')).map((tab) => (
+    tab.id === 'browse' && browseTabLabel
+      ? { ...tab, label: browseTabLabel }
+      : tab
+  ));
 
   return (
     <div id="sidebar-tab-bar" role="tablist" className="flex border-b border-gray-200">

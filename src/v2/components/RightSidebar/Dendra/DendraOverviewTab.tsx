@@ -128,13 +128,18 @@ export function DendraOverviewTab({
   const monitoringTarget = useMemo(() => {
     const meta = (serviceContextLayer ?? activeCatalogLayer)?.catalogMeta;
     if (!meta?.servicePath) return null;
-    const binding = resolveRendererBinding(meta.servicePath);
+    const valueField = activeCatalogLayer?.catalogMeta?.valueField;
+    const binding = resolveRendererBinding(meta.servicePath, valueField);
     if (!binding) return null;
     return {
       datasetId: meta.datasetId,
       servicePath: meta.servicePath,
       sensorId: binding.variableKey,
-      displayName: serviceTitle ?? 'this dataset',
+      valueField: binding.valueField ?? valueField,
+      displayName: binding.label
+        ?? (valueField ? activeCatalogLayer?.name : null)
+        ?? serviceTitle
+        ?? 'this dataset',
     };
   }, [serviceContextLayer, activeCatalogLayer, serviceTitle]);
 
@@ -178,6 +183,7 @@ export function DendraOverviewTab({
       datasetId: monitoringTarget.datasetId,
       servicePath: monitoringTarget.servicePath,
       sensorId: monitoringTarget.sensorId,
+      valueField: monitoringTarget.valueField,
     });
     navigate('/monitoring');
   };

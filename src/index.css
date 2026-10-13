@@ -98,6 +98,13 @@ button:active {
   box-shadow: none !important;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -531,6 +538,23 @@ body {
 }
 .animate-fade-in-up {
   animation: fade-in-up 250ms ease-out;
+}
+
+/* Brief horizontal shake for a form field that failed validation */
+@keyframes run-name-shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-5px); }
+  40%      { transform: translateX(5px); }
+  60%      { transform: translateX(-3px); }
+  80%      { transform: translateX(3px); }
+}
+.animate-run-name-shake {
+  animation: run-name-shake 350ms ease-in-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-run-name-shake {
+    animation: none;
+  }
 }
 
 /* Reduced motion support - simplify drag animations for accessibility */

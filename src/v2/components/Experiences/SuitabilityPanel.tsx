@@ -1,33 +1,58 @@
 // ============================================================================
-// SuitabilityPanel — weighted raster overlay: pick rasters, reclassify, run.
+// SuitabilityPanel — multi-step weighted raster overlay wizard.
 // ============================================================================
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Info, Loader2, Play } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GP_SERVICES } from '../../config/geoprocessing';
-import { fetchCatalogRasters, fetchCategoryLabels, submitGpJob } from '../../services/geoprocessingService';
+import { fetchCatalogRasters, submitGpJob } from '../../services/geoprocessingService';
+import { fetchRasterClassLabels } from '../../services/rasterClassLabels';
 import { experienceUi } from './experienceUi';
 import { GpJobStatus } from './GpJobStatus';
-import { initLayerConfig, LayerConfigCard } from './LayerConfig';
-import { LayerPicker } from './LayerPicker';
-import type {
-  CatalogRaster,
-  GpJobRecord,
-  LayerReclassConfig,
-  PreviewAction,
-  RasterScope,
-  ResultLayerInfo,
+import { initLayerConfig } from './LayerConfig';
+import { SuitabilityConfigureStep } from './suitability/SuitabilityConfigureStep';
+import { SuitabilityDataStep } from './suitability/SuitabilityDataStep';
+import { SuitabilityIntroStep } from './suitability/SuitabilityIntroStep';
+import { SuitabilityRunStep } from './suitability/SuitabilityRunStep';
+import { validateRunName } from './suitability/runName';
+import { ANALYSIS_EXTENT_BOUNDARIES } from './analysisExtentLayer';
+import {
+  defaultResolutionForScope,
+  resolutionForScopeChange,
+  resolutionsForScope,
+} from './suitability/wizardCopy';
+import { retainCompatibleSelection } from './suitability/rasterFamilies';
+import {
+  RASTER_SCOPE_OPTIONS,
+  type CatalogRaster,
+  type GpJobRecord,
+  type LayerReclassConfig,
+  type PreviewAction,
+  type RasterScope,
+  type ResultLayerInfo,
+  type SuitabilityRunRecord,
 } from './types';
-import { RASTER_SCOPE_OPTIONS } from './types';
 
-const MIN_RESOLUTION_M = 10;
+type WizardStep = 'intro' | 'data' | 'configure' | 'run';
+
+const STEP_META: Array<{ id: WizardStep; label: string }> = [
+  { id: 'intro', label: 'Overview' },
+  { id: 'data', label: 'Data' },
+  { id: 'configure', label: 'Weights' },
+  { id: 'run', label: 'Run' },
+];
+
+const FINISHED_JOB_STATUSES = ['esriJobSucceeded', 'esriJobFailed', 'esriJobCancelled'];
 
 interface SuitabilityPanelProps {
   token: string | null;
-  onLayerAdded?: (info: ResultLayerInfo) => void;
+  onLayerAdded?: (info: ResultLayerInfo | null) => void;
   onPreviewLayer?: (action: PreviewAction) => void;
   onExtentChange?: (scope: RasterScope) => void;
+  /** Names of runs already on the map. A new run cannot reuse one. */
+  existingRunNames?: string[];
 }
+
+const NO_RUN_NAMES: string[] = [];
 
 function buildGpConfig(
   configs: Record<number, LayerReclassConfig>,
@@ -51,19 +76,60 @@ function buildGpConfig(
   });
 }
 
-function resolutionsForScope(rasters: CatalogRaster[], scope: RasterScope): number[] {
-  const values = new Set<number>();
-  for (const raster of rasters) {
-    if (raster.scope !== scope) continue;
-    if (raster.resolution == null || raster.resolution < MIN_RESOLUTION_M) continue;
-    values.add(raster.resolution);
-  }
-  return [...values].sort((a, b) => a - b);
-}
-
-function defaultResolution(available: number[]): number | null {
-  if (available.includes(30)) return 30;
-  return available[0] ?? null;
+function WizardStepIndicator({
+  step,
+  onStepChange,
+  locked,
+}: {
+  step: WizardStep;
+  onStepChange: (step: WizardStep) => void;
+  /** Blocks every step while an analysis is running. */
+  locked: boolean;
+}) {
+  const activeIndex = STEP_META.findIndex((entry) => entry.id === step);
+  return (
+    <nav aria-label="Suitability analysis steps" className="flex items-center gap-1">
+      {STEP_META.map((entry, index) => {
+        const isActive = entry.id === step;
+        const isComplete = index < activeIndex;
+        const canOpen = index <= activeIndex && !locked;
+        return (
+          <div key={entry.id} className="flex min-w-0 flex-1 items-center gap-1">
+            <button
+              type="button"
+              disabled={!canOpen}
+              onClick={() => onStepChange(entry.id)}
+              aria-current={isActive ? 'step' : undefined}
+              title={locked ? 'Unavailable while the analysis is running' : undefined}
+              className={`flex min-w-0 flex-1 flex-col items-center gap-1 ${
+                isActive ? 'text-emerald-800' : isComplete ? 'text-emerald-600' : 'text-gray-400'
+              } ${locked ? 'cursor-not-allowed opacity-50' : canOpen ? 'cursor-pointer' : 'cursor-default'}`}
+            >
+              <span
+                className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
+                  isActive
+                    ? 'bg-emerald-600 text-white'
+                    : isComplete
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-gray-100 text-gray-500'
+                }`}
+              >
+                {index + 1}
+              </span>
+              <span className="truncate text-xs font-medium">{entry.label}</span>
+            </button>
+            {index < STEP_META.length - 1 && (
+              <div
+                className={`mb-5 h-px w-2 flex-shrink-0 ${
+                  index < activeIndex ? 'bg-emerald-300' : 'bg-gray-200'
+                }`}
+              />
+            )}
+          </div>
+        );
+      })}
+    </nav>
+  );
 }
 
 export function SuitabilityPanel({
@@ -71,19 +137,28 @@ export function SuitabilityPanel({
   onLayerAdded,
   onPreviewLayer,
   onExtentChange,
+  existingRunNames = NO_RUN_NAMES,
 }: SuitabilityPanelProps) {
+  const [step, setStep] = useState<WizardStep>('intro');
+  const [runName, setRunName] = useState('');
   const [catalog, setCatalog] = useState<CatalogRaster[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [scope, setScope] = useState<RasterScope>('preserve');
-  const [resolution, setResolution] = useState<number | null>(null);
+  const [resolution, setResolution] = useState<number | null>(
+    () => defaultResolutionForScope('preserve'),
+  );
   const [selectedLayers, setSelectedLayers] = useState<CatalogRaster[]>([]);
   const [configs, setConfigs] = useState<Record<number, LayerReclassConfig>>({});
   const [scaleMax, setScaleMax] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [job, setJob] = useState<GpJobRecord | null>(null);
+  const [jobStatus, setJobStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [previewedIds, setPreviewedIds] = useState<Set<number>>(new Set());
+  const isRunning =
+    isSubmitting
+    || (job != null && jobStatus != null && !FINISHED_JOB_STATUSES.includes(jobStatus));
 
   useEffect(() => {
     let isCancelled = false;
@@ -113,70 +188,115 @@ export function SuitabilityPanel({
     onExtentChange?.(scope);
   }, [onExtentChange, scope]);
 
-  const availableResolutions = useMemo(
-    () => (scope ? resolutionsForScope(catalog, scope) : []),
-    [catalog, scope],
+  const availableResolutions = useMemo(() => resolutionsForScope(scope), [scope]);
+
+  useEffect(() => {
+    const available = resolutionsForScope(scope);
+    setResolution((current) => {
+      if (current != null && available.includes(current)) return current;
+      return defaultResolutionForScope(scope);
+    });
+  }, [scope]);
+
+  const selectedLayersRef = useRef(selectedLayers);
+  selectedLayersRef.current = selectedLayers;
+  const configsRef = useRef(configs);
+  configsRef.current = configs;
+  const previewedIdsRef = useRef(previewedIds);
+  previewedIdsRef.current = previewedIds;
+
+  const pruneIncompatibleSelection = useCallback(
+    (nextScope: RasterScope, nextResolution: number | null) => {
+      const current = selectedLayersRef.current;
+      const { layers, idMap } = retainCompatibleSelection(
+        current,
+        catalog,
+        nextScope,
+        nextResolution,
+      );
+
+      const nextConfigs: Record<number, LayerReclassConfig> = {};
+      for (const raster of current) {
+        const mappedId = idMap.get(raster.id);
+        if (mappedId == null || nextConfigs[mappedId]) continue;
+        const config = configsRef.current[raster.id];
+        if (config) nextConfigs[mappedId] = config;
+      }
+      for (const layer of layers) {
+        if (!nextConfigs[layer.id]) nextConfigs[layer.id] = initLayerConfig(layer);
+      }
+
+      const nextPreviewed = new Set<number>();
+      for (const rasterId of previewedIdsRef.current) {
+        const raster = current.find((item) => item.id === rasterId);
+        if (!raster) continue;
+        const mappedId = idMap.get(raster.id);
+        if (mappedId == null) {
+          onPreviewLayer?.({ action: 'remove', rasterId: raster.id, title: raster.title });
+          continue;
+        }
+        nextPreviewed.add(mappedId);
+        if (mappedId === raster.id) continue;
+        const replacement = layers.find((layer) => layer.id === mappedId);
+        onPreviewLayer?.({ action: 'remove', rasterId: raster.id, title: raster.title });
+        if (!replacement) continue;
+        onPreviewLayer?.({
+          action: 'add',
+          rasterId: replacement.id,
+          url: replacement.url,
+          title: replacement.title,
+          datasetId: replacement.datasetId,
+          mosaicTag: replacement.mosaicTag,
+        });
+      }
+
+      setSelectedLayers(layers);
+      setConfigs(nextConfigs);
+      setPreviewedIds(nextPreviewed);
+    },
+    [catalog, onPreviewLayer],
   );
 
   useEffect(() => {
-    if (!scope) {
-      setResolution(null);
-      return;
-    }
-    const available = resolutionsForScope(catalog, scope);
-    setResolution((current) => {
-      if (current != null && available.includes(current)) return current;
-      return defaultResolution(available);
-    });
-  }, [catalog, scope]);
-
-  const filteredRasters = useMemo(() => {
-    if (!scope || resolution == null) return [];
-    return catalog.filter(
-      (raster) => raster.scope === scope && raster.resolution === resolution,
-    );
-  }, [catalog, resolution, scope]);
-
-  const selectedIds = new Set(selectedLayers.map((raster) => raster.id));
-
-  const clearSelection = useCallback(() => {
-    previewedIds.forEach((id) => {
-      const raster = selectedLayers.find((item) => item.id === id);
-      if (raster) onPreviewLayer?.({ action: 'remove', rasterId: id, title: raster.title });
-    });
-    setSelectedLayers([]);
-    setConfigs({});
-    setPreviewedIds(new Set());
-  }, [onPreviewLayer, previewedIds, selectedLayers]);
-
-  const confirmClear = useCallback(
-    (what: string) => {
-      if (selectedLayers.length === 0) return true;
-      return window.confirm(
-        `Changing ${what} will clear your ${selectedLayers.length} selected layer(s). Continue?`,
-      );
-    },
-    [selectedLayers.length],
-  );
-
-  const handleAddLayer = useCallback((raster: CatalogRaster) => {
-    setSelectedLayers((current) => [...current, raster]);
-    const config = initLayerConfig(raster);
-    setConfigs((current) => ({ ...current, [raster.id]: config }));
-
-    if (config.type === 'categorical' && raster.url) {
-      fetchCategoryLabels(raster.url).then((result) => {
-        if (!result) return;
-        setConfigs((current) => ({
-          ...current,
-          [raster.id]: {
-            ...current[raster.id],
-            categories: result.categories,
-            categoryLabels: result.labels,
-          },
-        }));
+    let cancelled = false;
+    for (const raster of selectedLayers) {
+      if (raster.units.toLowerCase() !== 'category' || !raster.url) continue;
+      fetchRasterClassLabels({
+        rasterUrl: raster.url,
+        datasetId: raster.datasetId,
+        token,
+      }).then((result) => {
+        if (cancelled || !result) return;
+        setConfigs((current) => {
+          const existing = current[raster.id];
+          if (!existing || Object.keys(existing.categoryLabels).length > 0) return current;
+          const categories: Record<string, number> = {};
+          for (const [value, score] of Object.entries(result.categories)) {
+            categories[value] = existing.categories[value] ?? score;
+          }
+          return {
+            ...current,
+            [raster.id]: {
+              ...existing,
+              categories,
+              categoryLabels: result.labels,
+            },
+          };
+        });
       });
     }
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedLayers, token]);
+
+  const handleAddLayer = useCallback((raster: CatalogRaster) => {
+    setSelectedLayers((current) => {
+      if (current.some((item) => item.id === raster.id)) return current;
+      return [...current, raster];
+    });
+    const config = initLayerConfig(raster);
+    setConfigs((current) => ({ ...current, [raster.id]: config }));
   }, []);
 
   const handleRemoveLayer = useCallback(
@@ -200,51 +320,84 @@ export function SuitabilityPanel({
 
   const handleTogglePreview = useCallback(
     (raster: CatalogRaster) => {
+      const removing = previewedIds.has(raster.id);
       setPreviewedIds((current) => {
         const next = new Set(current);
-        if (next.has(raster.id)) {
-          next.delete(raster.id);
-          onPreviewLayer?.({ action: 'remove', rasterId: raster.id, title: raster.title });
-        } else {
-          next.add(raster.id);
-          onPreviewLayer?.({
-            action: 'add',
-            rasterId: raster.id,
-            url: raster.url,
-            title: raster.title,
-          });
-        }
+        if (removing) next.delete(raster.id);
+        else next.add(raster.id);
         return next;
       });
+      onPreviewLayer?.(
+        removing
+          ? { action: 'remove', rasterId: raster.id, title: raster.title }
+          : {
+              action: 'add',
+              rasterId: raster.id,
+              url: raster.url,
+              title: raster.title,
+              datasetId: raster.datasetId,
+              mosaicTag: raster.mosaicTag,
+            },
+      );
     },
-    [onPreviewLayer],
+    [onPreviewLayer, previewedIds],
   );
 
   const handleScopeChange = useCallback(
     (nextScope: RasterScope) => {
       if (nextScope === scope) return;
-      if (!confirmClear('extent')) return;
-      clearSelection();
       setScope(nextScope);
+      const nextResolution = resolutionForScopeChange(resolution, nextScope);
+      setResolution(nextResolution);
+      pruneIncompatibleSelection(nextScope, nextResolution);
     },
-    [clearSelection, confirmClear, scope],
+    [pruneIncompatibleSelection, resolution, scope],
   );
 
   const handleResolutionChange = useCallback(
     (nextResolution: number) => {
       if (nextResolution === resolution) return;
-      if (!confirmClear('resolution')) return;
-      clearSelection();
       setResolution(nextResolution);
+      pruneIncompatibleSelection(scope, nextResolution);
     },
-    [clearSelection, confirmClear, resolution],
+    [pruneIncompatibleSelection, resolution, scope],
   );
 
   const handleRun = useCallback(async () => {
-    if (selectedLayers.length === 0) return;
+    const name = runName.trim();
+    if (selectedLayers.length === 0 || isRunning) return;
+    const nameProblem = validateRunName(name, existingRunNames);
+    if (nameProblem) {
+      setError(nameProblem);
+      return;
+    }
     setIsSubmitting(true);
     setError(null);
     setJob(null);
+    setJobStatus(null);
+
+    const record: SuitabilityRunRecord = {
+      name,
+      extent: scope,
+      extentLabel: RASTER_SCOPE_OPTIONS.find((option) => option.value === scope)?.label ?? scope,
+      scaleMax,
+      layers: selectedLayers.flatMap((raster) => {
+        const config = configs[raster.id];
+        if (!config) return [];
+        return [{
+          title: raster.title,
+          url: raster.url,
+          weight: config.weight,
+          type: config.type,
+          bins: config.type === 'continuous' ? config.bins : undefined,
+          categories: config.type === 'categorical' ? config.categories : undefined,
+          categoryLabels: config.type === 'categorical' ? config.categoryLabels : undefined,
+          rescaleMin: config.type === 'rescale' ? config.rescaleMin : undefined,
+          rescaleMax: config.type === 'rescale' ? config.rescaleMax : undefined,
+          invert: config.type === 'rescale' ? config.invert : undefined,
+        }];
+      }),
+    };
 
     try {
       const jobId = await submitGpJob(
@@ -254,12 +407,14 @@ export function SuitabilityPanel({
           input_rasters: JSON.stringify(selectedLayers.map((raster) => ({ url: raster.url }))),
           layer_config: JSON.stringify(buildGpConfig(configs, selectedLayers)),
           scale_max: String(scaleMax),
+          analysis_mask: ANALYSIS_EXTENT_BOUNDARIES[scope].url,
           output_raster: 'suitability_result',
         },
         token,
         'suitability',
       );
 
+      setJobStatus('esriJobSubmitted');
       setJob({
         id: jobId,
         status: 'esriJobSubmitted',
@@ -271,7 +426,8 @@ export function SuitabilityPanel({
           jobId,
           mapServerUrl: GP_SERVICES.suitabilityModeler.mapServer,
           groupTitle: 'Suitability Analysis',
-          title: `Suitability (${selectedLayers.length} layers)`,
+          title: name,
+          record,
         },
       });
     } catch (caught) {
@@ -279,158 +435,82 @@ export function SuitabilityPanel({
     } finally {
       setIsSubmitting(false);
     }
-  }, [configs, scaleMax, selectedLayers, token]);
-
-  const canAddLayers = Boolean(scope && resolution != null);
-  const pickerEmpty = catalogLoading
-    ? 'Loading rasters…'
-    : catalogError
-      ? catalogError
-      : !canAddLayers
-        ? 'Choose an extent and resolution first'
-        : filteredRasters.length === 0
-          ? `No rasters at ${resolution}m for this extent`
-          : 'No matching rasters';
+  }, [configs, existingRunNames, isRunning, runName, scaleMax, scope, selectedLayers, token]);
 
   return (
     <div id="suitability-panel" className={experienceUi.panel}>
-      <p className={experienceUi.description}>
-        Select raster layers, assign weights and reclassification rules, then run a
-        weighted overlay suitability analysis.
-      </p>
+      <WizardStepIndicator step={step} onStepChange={setStep} locked={isRunning} />
 
-      <div className={experienceUi.section}>
-        <span className={experienceUi.label}>Extent</span>
-        <select
-          aria-label="Extent"
-          value={scope}
-          onChange={(event) => handleScopeChange(event.target.value as RasterScope)}
-          className={experienceUi.input}
-        >
-          {RASTER_SCOPE_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className={experienceUi.section}>
-        <span className={experienceUi.label}>Resolution</span>
-        <select
-          aria-label="Resolution"
-          value={resolution ?? ''}
-          disabled={!scope}
-          onChange={(event) => handleResolutionChange(Number(event.target.value))}
-          className={`${experienceUi.input} disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400`}
-        >
-          {availableResolutions.length === 0 && (
-            <option value="">No resolutions available</option>
-          )}
-          {availableResolutions.map((value) => (
-            <option key={value} value={value}>
-              {value}m
-            </option>
-          ))}
-        </select>
-        <p className={experienceUi.hint}>
-          {catalogLoading
-            ? 'Loading available resolutions…'
-            : availableResolutions.length === 0
-              ? 'No rasters at 10 m or coarser for this extent yet. Once the catalog includes a matching scope, resolutions will appear here.'
-              : resolution != null
-                ? `All layers must share the same ${resolution}m grid.`
-                : 'Resolutions of 10 m and coarser are listed for the selected extent.'}
-        </p>
-      </div>
-
-      <div className={experienceUi.section}>
-        <span className={experienceUi.label}>Analysis Layers</span>
-        <LayerPicker
-          rasters={filteredRasters}
-          isLoading={catalogLoading}
-          error={catalogError}
-          disabled={!canAddLayers}
-          disabledHint="Choose an extent and resolution first"
-          emptyMessage={pickerEmpty}
-          selectedIds={selectedIds}
-          onAdd={handleAddLayer}
-          onRemove={handleRemoveLayer}
-        />
-      </div>
-
-      {selectedLayers.length > 0 && (
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-2">
-            <span className={experienceUi.label}>Selected ({selectedLayers.length})</span>
-            <label className="flex items-center gap-1.5 text-[11px] text-gray-600">
-              Scale
-              <select
-                value={scaleMax}
-                onChange={(event) => setScaleMax(Number(event.target.value))}
-                className="rounded-button border border-gray-200 bg-white px-1.5 py-1 text-xs focus:border-emerald-500 focus:outline-none"
-              >
-                {[3, 5, 7, 10].map((value) => (
-                  <option key={value} value={value}>
-                    1–{value}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          {selectedLayers.map((raster) => {
-            const config = configs[raster.id];
-            if (!config) return null;
-            return (
-              <LayerConfigCard
-                key={raster.id}
-                raster={raster}
-                config={config}
-                scaleMax={scaleMax}
-                isPreviewed={previewedIds.has(raster.id)}
-                onConfigChange={(next) =>
-                  setConfigs((current) => ({ ...current, [raster.id]: next }))
-                }
-                onRemove={() => handleRemoveLayer(raster.id)}
-                onTogglePreview={() => handleTogglePreview(raster)}
-              />
-            );
-          })}
-
-          <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-gray-500">
-            <Info className="mt-px h-3.5 w-3.5 flex-shrink-0" />
-            Weighted average: each cell = Σ(weight × score) / Σ(weights)
-          </p>
-        </div>
+      {step === 'intro' && (
+        <SuitabilityIntroStep onStart={() => setStep('data')} />
       )}
 
-      {error && <div className={experienceUi.error}>{error}</div>}
+      {step === 'data' && (
+        <SuitabilityDataStep
+          catalog={catalog}
+          catalogLoading={catalogLoading}
+          catalogError={catalogError}
+          scope={scope}
+          resolution={resolution}
+          availableResolutions={availableResolutions}
+          selectedLayers={selectedLayers}
+          previewedIds={previewedIds}
+          onScopeChange={handleScopeChange}
+          onResolutionChange={handleResolutionChange}
+          onAddLayer={handleAddLayer}
+          onRemoveLayer={handleRemoveLayer}
+          onTogglePreview={handleTogglePreview}
+          onBack={() => setStep('intro')}
+          onContinue={() => setStep('configure')}
+        />
+      )}
 
-      <button
-        type="button"
-        onClick={handleRun}
-        disabled={selectedLayers.length === 0 || isSubmitting}
-        className={experienceUi.runBtn}
-      >
-        {isSubmitting ? (
-          <>
-            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Submitting…
-          </>
-        ) : (
-          <>
-            <Play className="h-3.5 w-3.5" /> Run Suitability Analysis
-          </>
-        )}
-      </button>
+      {step === 'configure' && (
+        <SuitabilityConfigureStep
+          selectedLayers={selectedLayers}
+          configs={configs}
+          scaleMax={scaleMax}
+          analysisScope={scope}
+          token={token}
+          previewedIds={previewedIds}
+          onScaleMaxChange={setScaleMax}
+          onConfigChange={(rasterId, config) =>
+            setConfigs((current) => ({ ...current, [rasterId]: config }))
+          }
+          onRemoveLayer={handleRemoveLayer}
+          onTogglePreview={handleTogglePreview}
+          onBack={() => setStep('data')}
+          onContinue={() => setStep('run')}
+        />
+      )}
+
+      {step === 'run' && (
+        <SuitabilityRunStep
+          selectedLayers={selectedLayers}
+          configs={configs}
+          scaleMax={scaleMax}
+          scope={scope}
+          resolution={resolution}
+          runName={runName}
+          existingRunNames={existingRunNames}
+          isRunning={isRunning}
+          isSubmitting={isSubmitting}
+          error={error}
+          onRunNameChange={setRunName}
+          onBack={() => setStep('configure')}
+          onRun={handleRun}
+        />
+      )}
 
       {job && (
         <GpJobStatus
+          key={job.id}
           job={job}
           serviceUrl={GP_SERVICES.suitabilityModeler.url}
           task={GP_SERVICES.suitabilityModeler.task}
           token={token}
           onLayerAdded={onLayerAdded}
+          onStatusChange={setJobStatus}
         />
       )}
     </div>

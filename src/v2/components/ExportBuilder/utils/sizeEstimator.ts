@@ -40,6 +40,10 @@ export const SIZE_ESTIMATE_BYTES_PER_ITEM: Record<DataSource, Record<string, num
   lidar: {
     metadata: 2500,
   },
+  phenocam: {
+    metadata: 500,
+    images: 350_000,
+  },
 };
 
 export const LARGE_EXPORT_WARNING_THRESHOLD_BYTES = 5 * 1024 * 1024 * 1024;
