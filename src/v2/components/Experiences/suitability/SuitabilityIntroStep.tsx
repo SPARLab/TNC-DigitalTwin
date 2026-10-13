@@ -1,9 +1,12 @@
 // ============================================================================
-// SuitabilityIntroStep — title, use cases, data overview, start CTA.
+// SuitabilityIntroStep - intro and examples, data overview, how a run works
+// (with a "?" that opens the weighted overlay explainer), start CTA.
 // ============================================================================
 
-import { ArrowRight, Layers, Map, Scale } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowRight, CircleHelp, Layers, Map, Scale } from 'lucide-react';
 import { experienceUi } from '../experienceUi';
+import { WeightedOverlayInfoModal } from './WeightedOverlayInfoModal';
 import { SUITABILITY_INTRO } from './wizardCopy';
 
 interface SuitabilityIntroStepProps {
@@ -11,27 +14,17 @@ interface SuitabilityIntroStepProps {
 }
 
 export function SuitabilityIntroStep({ onStart }: SuitabilityIntroStepProps) {
+  const [explainerOpen, setExplainerOpen] = useState(false);
+
   return (
     <div className="flex flex-col gap-5">
+      <WeightedOverlayInfoModal isOpen={explainerOpen} onClose={() => setExplainerOpen(false)} />
       <div>
         <h3 className={experienceUi.heading}>{SUITABILITY_INTRO.headline}</h3>
-        <p className={`mt-2 ${experienceUi.description}`}>{SUITABILITY_INTRO.summary}</p>
+        <p className={`mt-2 ${experienceUi.description}`}>
+          {SUITABILITY_INTRO.summary} {SUITABILITY_INTRO.examples}
+        </p>
       </div>
-
-      <section className="flex flex-col gap-2">
-        <h4 className={experienceUi.label}>Example use cases</h4>
-        <ul className="flex flex-col gap-2">
-          {SUITABILITY_INTRO.useCases.map((useCase) => (
-            <li
-              key={useCase.title}
-              className="rounded-card border border-gray-200 bg-gray-50 px-3 py-2.5"
-            >
-              <p className="text-sm font-semibold text-gray-900">{useCase.title}</p>
-              <p className="mt-1 text-sm leading-relaxed text-gray-600">{useCase.detail}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
 
       <section className="flex flex-col gap-2">
         <h4 className={experienceUi.label}>What data can you use?</h4>
@@ -51,6 +44,17 @@ export function SuitabilityIntroStep({ onStart }: SuitabilityIntroStepProps) {
                 <span>
                   <span className="font-semibold text-gray-900">{index + 1}. </span>
                   {step}
+                  {index === SUITABILITY_INTRO.howItWorks.length - 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setExplainerOpen(true)}
+                      aria-label="How the weighted overlay works"
+                      title="How the weighted overlay works"
+                      className="ml-1 inline-flex translate-y-0.5 rounded-full text-gray-400 transition-colors hover:text-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                    >
+                      <CircleHelp className="h-4 w-4" />
+                    </button>
+                  )}
                 </span>
               </li>
             );

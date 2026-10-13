@@ -10,26 +10,12 @@ export const SUITABILITY_INTRO = {
     'Score how well places meet a set of criteria by combining environmental '
     + 'rasters into one weighted suitability surface. Use it when you need a '
     + 'transparent, map-based ranking rather than a black-box prediction.',
-  useCases: [
-    {
-      title: 'Habitat or restoration siting',
-      detail:
-        'Combine slope, soils, land cover, and climate layers to highlight areas '
-        + 'that match a species’ or project’s requirements.',
-    },
-    {
-      title: 'Infrastructure or access planning',
-      detail:
-        'Trade off terrain, hydrology, and land-cover constraints to shortlist '
-        + 'feasible corridors or facility locations.',
-    },
-    {
-      title: 'Scenario comparison',
-      detail:
-        'Change weights or reclass rules and re-run to see how priorities shift '
-        + 'across the preserve, county, or tri-county extent.',
-    },
-  ],
+  examples:
+    'Example uses include habitat or restoration siting, where slope, soils, '
+    + 'land cover, and climate layers highlight areas that match a species’ or '
+    + 'project’s requirements; or planning where to place new sensors, where '
+    + 'terrain, hydrology, land cover, and access constraints help shortlist '
+    + 'feasible locations.',
   dataOverview:
     'Analysis layers come from the Digital Twin raster catalog: elevation and '
     + 'terrain derivatives, soils (SSURGO), land cover, species-richness surfaces, '
@@ -42,6 +28,79 @@ export const SUITABILITY_INTRO = {
     'Set a suitability scale, weights, and reclassification rules per layer.',
     'Run a weighted overlay: each cell becomes Σ(weight × score) / Σ(weights).',
   ],
+} as const;
+
+/**
+ * Detailed description of the weighted overlay, shown from the "?" beside step
+ * four. Mirrors twin_models/suitability/suitability_modeler.pyt: keep the two in
+ * step if the tool's scoring or NoData handling changes.
+ */
+export const WEIGHTED_OVERLAY_EXPLAINER = {
+  title: 'How the weighted overlay works',
+  intro:
+    'The weighted overlay turns your input layers into one suitability score per '
+    + 'map cell, on the 1 to N scale you choose, where a higher score means more '
+    + 'suitable.',
+  steps: [
+    {
+      title: 'Clip to the analysis extent',
+      body:
+        'Every input is cut to the extent you chose (preserve, Santa Barbara County, '
+        + 'or tri-county) without resampling. All inputs must share the same grid, '
+        + 'which is why you pick one resolution up front.',
+    },
+    {
+      title: 'Score each layer',
+      body:
+        'Each layer is converted to scores from 1 to N using the rule you set for it. '
+        + 'Cells a rule does not cover get no score from that layer.',
+      rules: [
+        {
+          name: 'Categorical',
+          body: 'Each pixel value (for example a land-cover class) gets the score you assigned. Values you did not list get no score.',
+        },
+        {
+          name: 'Continuous',
+          body: 'Value ranges each get a score. A range includes its lower bound but not its upper bound, except the top of the highest range, which is included. Values outside every range get no score.',
+        },
+        {
+          name: 'Rescale',
+          body: 'Values between a minimum and maximum are stretched evenly onto 1 to N, and values beyond them are held at the ends. Invert flips it, so high values score low.',
+        },
+      ],
+    },
+    {
+      title: 'Weight and combine',
+      body:
+        'Each cell’s suitability is the weighted average of its layer scores: '
+        + 'Σ(weight × score) ÷ Σ(weights). Because it is an average, the result stays '
+        + 'on the same 1 to N scale, and only the ratio between weights matters '
+        + '(weights of 3 and 1 behave like 75% and 25%).',
+    },
+    {
+      title: 'Handle missing data',
+      body:
+        'Only layers that have a score in a cell are counted there. A cell missing '
+        + 'one layer is averaged over the remaining layers rather than blanked out, '
+        + 'so a sparse layer does not erase the map. A cell with no scores at all is '
+        + 'NoData. A layer with weight 0, or with no scores anywhere, is left out.',
+    },
+    {
+      title: 'Output',
+      body:
+        'The result is a raster of scores from 1 to N, drawn from low to high '
+        + 'suitability. The run also records how the scores are distributed, and for '
+        + 'each band (1–2, 2–3, and so on) what the input layers looked like, which '
+        + 'you can see in the analysis after a run.',
+    },
+  ],
+  example: {
+    title: 'Example',
+    body:
+      'Slope (weight 3) scores 5 in a cell and soil drainage (weight 1) scores 1. '
+      + 'The cell’s suitability is (3 × 5 + 1 × 1) ÷ (3 + 1) = 4.0. If drainage had no '
+      + 'data there, only slope would count and the cell would score 5.0.',
+  },
 } as const;
 
 /** Published analysis grids per extent (meters). 1000 displays as 1km. */

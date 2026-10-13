@@ -36,7 +36,7 @@ export function scoreColor(score: number, scaleMax: number): string {
   return `rgb(${channel(0)}, ${channel(1)}, ${channel(2)})`;
 }
 
-function formatCount(value: number): string {
+export function formatCount(value: number): string {
   return value.toLocaleString('en-US');
 }
 
@@ -55,12 +55,12 @@ export function formatNumber(value: number | null | undefined): string {
   return value.toFixed(3).replace(/\.?0+$/, '') || '0';
 }
 
-function formatArea(value: number | null | undefined): string | null {
+export function formatArea(value: number | null | undefined): string | null {
   if (value == null || !Number.isFinite(value)) return null;
   return `${value >= 100 ? Math.round(value).toLocaleString('en-US') : value.toFixed(1)} km²`;
 }
 
-function PercentBar({ percent, color }: { percent: number | null; color: string }) {
+export function PercentBar({ percent, color }: { percent: number | null; color: string }) {
   const width = percent == null ? 0 : Math.min(Math.max(percent, 0), 100);
   return (
     <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-sm bg-gray-200">
@@ -69,7 +69,7 @@ function PercentBar({ percent, color }: { percent: number | null; color: string 
   );
 }
 
-interface HistogramBin {
+export interface HistogramBin {
   low: number;
   high: number;
   count: number;
@@ -107,8 +107,8 @@ interface ColumnChartProps {
   colors: string[];
   /** Print each bar's share above it. */
   showShare?: boolean;
-  /** Axis labels placed by value along the chart's width. */
-  ticks?: { value: number; label: string }[];
+  /** One label centered under each bar. */
+  barLabels?: string[];
   startLabel?: string;
   endLabel?: string;
   height?: number;
@@ -119,15 +119,12 @@ function ColumnChart({
   bins,
   colors,
   showShare = false,
-  ticks,
+  barLabels,
   startLabel,
   endLabel,
   height = 120,
 }: ColumnChartProps) {
   const max = Math.max(...bins.map((bin) => bin.count), 1);
-  const first = bins[0]?.low ?? 0;
-  const last = bins[bins.length - 1]?.high ?? first + 1;
-  const span = Math.max(last - first, Number.EPSILON);
   // Leave headroom so the share label above the tallest bar is not clipped.
   const headroom = showShare ? 86 : 100;
 
@@ -140,11 +137,16 @@ function ColumnChart({
             <div
               key={index}
               title={`${formatNumber(bin.low)}–${formatNumber(bin.high)}: ${formatCount(bin.count)} cells (${formatPercent(bin.percent)})`}
-              className="relative min-w-0 flex-1 border-r border-white/70 last:border-r-0"
+              className="relative min-w-0 flex-1"
             >
+              {/* Empty bins keep a thin stub so the bars read as one unbroken run. */}
               <div
                 className="absolute inset-x-0 bottom-0"
-                style={{ height: `${barHeight}%`, background: colors[index] }}
+                style={{
+                  height: bin.count > 0 ? `${barHeight}%` : 2,
+                  background: bin.count > 0 ? colors[index] : '#e5e7eb',
+                  boxShadow: 'inset -1px 0 0 rgba(255, 255, 255, 0.7)',
+                }}
               />
               {showShare && bin.count > 0 && (
                 <span
@@ -158,23 +160,16 @@ function ColumnChart({
           );
         })}
       </div>
-      {ticks ? (
-        <div className="relative mt-0.5 h-4 text-[10px] text-gray-500">
-          {ticks.map((tick) => {
-            const position = ((tick.value - first) / span) * 100;
-            const edge = position <= 0 ? 'left-0' : position >= 100 ? 'right-0' : '-translate-x-1/2';
-            return (
-              <span
-                key={tick.value}
-                className={`absolute top-0 whitespace-nowrap tabular-nums ${edge}`}
-                style={position > 0 && position < 100 ? { left: `${position}%` } : undefined}
-              >
-                {tick.label}
-              </span>
-            );
-          })}
+      {barLabels && (
+        <div className="mt-1 flex text-[10px] text-gray-600">
+          {barLabels.map((label, index) => (
+            <span key={index} className="min-w-0 flex-1 truncate text-center tabular-nums">
+              {label}
+            </span>
+          ))}
         </div>
-      ) : (
+      )}
+      {(startLabel || endLabel) && (
         <div className="mt-0.5 flex justify-between text-[10px] text-gray-500">
           <span>{startLabel}</span>
           <span>{endLabel}</span>
@@ -184,23 +179,41 @@ function ColumnChart({
   );
 }
 
-function OverallDistribution({ analysis }: { analysis: SuitabilityRunAnalysis }) {
-  const { histogram, scale_max: scaleMax, stats, cells, area_km2: area } = analysis;
-  const bins = useMemo(
-    () => mergeBins(histogram.bin_edges, histogram.counts, histogram.percent, 8),
-    [histogram],
-  );
-  const low = bins[0]?.low ?? 1;
-  const high = bins[bins.length - 1]?.high ?? scaleMax;
-  const ticks: { value: number; label: string }[] = [];
-  for (let score = Math.ceil(low); score <= Math.floor(high); score += 1) {
-    const label = score === 1 ? '1 (low)' : score === scaleMax ? `${scaleMax} (high)` : String(score);
-    ticks.push({ value: score, label });
+/**
+ * One bar per whole-point interval (1–2, 2–3, ...), the same bands the input
+ * cards are split by. Older output without bands falls back to the merged fine
+ * histogram.
+ */
+export function distributionBins(analysis: SuitabilityRunAnalysis): HistogramBin[] {
+  if (analysis.bands.length > 0) {
+    return analysis.bands.map((band) => ({
+      low: band.min,
+      high: band.max,
+      count: band.cells,
+      percent: band.percent ?? 0,
+    }));
   }
+  const { histogram } = analysis;
+  return mergeBins(histogram.bin_edges, histogram.counts, histogram.percent, 8);
+}
+
+function OverallDistribution({ analysis }: { analysis: SuitabilityRunAnalysis }) {
+  const { scale_max: scaleMax, stats, cells, area_km2: area } = analysis;
+  const bins = useMemo(() => distributionBins(analysis), [analysis]);
+  const barLabels = bins.map((bin) => `${formatNumber(bin.low)}–${formatNumber(bin.high)}`);
   const areaText = formatArea(area.scored);
 
   return (
-    <CollapsibleSection variant="inline" title="Suitability distribution" bodyClassName="pt-1">
+    <div>
+    <p className="mb-2 text-xs leading-relaxed text-gray-600">
+      How the scored cells spread across the 1 to {scaleMax} scale, one bar per point of score
+      (1–2, 2–3, ...). Taller bars mean more of the area landed in that range.
+    </p>
+    <CollapsibleSection
+      variant="card"
+      title="Suitability distribution"
+      hint={`mean ${formatNumber(stats.mean)}`}
+    >
       <p className="text-xs leading-relaxed text-gray-600">
         {formatCount(cells.scored)} scored cells{areaText ? ` (${areaText})` : ''} · mean{' '}
         {formatNumber(stats.mean)} · median {formatNumber(stats.median)}
@@ -210,7 +223,9 @@ function OverallDistribution({ analysis }: { analysis: SuitabilityRunAnalysis })
           bins={bins}
           colors={bins.map((bin) => scoreColor((bin.low + bin.high) / 2, scaleMax))}
           showShare
-          ticks={ticks}
+          barLabels={barLabels}
+          startLabel="Low suitability"
+          endLabel="High suitability"
         />
       </div>
       <ul className="mt-3 flex flex-col gap-1">
@@ -223,6 +238,7 @@ function OverallDistribution({ analysis }: { analysis: SuitabilityRunAnalysis })
         ))}
       </ul>
     </CollapsibleSection>
+    </div>
   );
 }
 
@@ -387,8 +403,11 @@ export function RunAnalysisView({ analysis, record }: RunAnalysisViewProps) {
       <OverallDistribution analysis={analysis} />
 
       {band && (
-        <CollapsibleSection variant="inline" title="What each input looked like" bodyClassName="pt-1">
-          <p className="text-xs leading-relaxed text-gray-600">
+        <section>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            What each input looked like
+          </h4>
+          <p className="mt-1 text-xs leading-relaxed text-gray-600">
             Pick a suitability band to see the inputs behind the cells that landed in it.
           </p>
           <div role="group" aria-label="Suitability band" className="mt-2 flex gap-1">
@@ -436,7 +455,7 @@ export function RunAnalysisView({ analysis, record }: RunAnalysisViewProps) {
               ))}
             </ul>
           )}
-        </CollapsibleSection>
+        </section>
       )}
     </div>
   );

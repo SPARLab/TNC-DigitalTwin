@@ -5,12 +5,13 @@
 // uses the coming-soon placeholder until those models exist.
 // ============================================================================
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Construction, X } from 'lucide-react';
 import { ResizablePanel, type ResizablePanelHandle } from '../shared/ResizablePanel';
 import type { ExperienceDefinition } from '../../config/experienceRegistry';
 import { readStoredArcGisToken } from '../../services/geoprocessingService';
 import { CompletedRunsPanel } from './CompletedRunsPanel';
+import { loadStoredRuns, runsStorageKey, saveStoredRuns } from './completedRunsStorage';
 import { ExperienceMap } from './ExperienceMap';
 import { SDMPanel } from './SDMPanel';
 import { SuitabilityPanel } from './SuitabilityPanel';
@@ -42,12 +43,22 @@ function ComingSoonPanel({ experience }: { experience: ExperienceDefinition }) {
 export function ExperienceWorkspace({ experience, onClose }: ExperienceWorkspaceProps) {
   const Icon = experience.icon;
   const token = useMemo(() => readStoredArcGisToken(), []);
-  const [completedRuns, setCompletedRuns] = useState<CompletedRun[]>([]);
+  const tracksRuns = experience.panel === 'suitability' || experience.panel === 'sdm';
+  const runsKey = runsStorageKey(experience.id);
+  // Runs from the last day survive a refresh; older ones are dropped on load.
+  const [restored] = useState(() =>
+    tracksRuns ? loadStoredRuns(runsKey) : { runs: [], activeRunId: null },
+  );
+  const [completedRuns, setCompletedRuns] = useState<CompletedRun[]>(restored.runs);
+  const [activeRunId, setActiveRunId] = useState<string | null>(restored.activeRunId);
   const runsPanelRef = useRef<ResizablePanelHandle>(null);
   const [pointsAction, setPointsAction] = useState<PointsAction | null>(null);
   const [previewAction, setPreviewAction] = useState<PreviewAction | null>(null);
   const [analysisExtent, setAnalysisExtent] = useState<RasterScope>('preserve');
-  const tracksRuns = experience.panel === 'suitability' || experience.panel === 'sdm';
+
+  useEffect(() => {
+    if (tracksRuns) saveStoredRuns(runsKey, completedRuns, activeRunId);
+  }, [tracksRuns, runsKey, completedRuns, activeRunId]);
   const runNames = useMemo(() => completedRuns.map((run) => run.title), [completedRuns]);
 
   const rememberRun = useCallback((info: ResultLayerInfo | null) => {
@@ -67,11 +78,33 @@ export function ExperienceWorkspace({ experience, onClose }: ExperienceWorkspace
         tifUrl: info.tifUrl ?? previous?.tifUrl ?? null,
         addedAt: previous?.addedAt ?? Date.now(),
       };
-      return [next, ...current.filter((run) => run.jobId !== info.jobId)];
+      // A new run becomes the one on the map; earlier runs stay in the list.
+      const others = current
+        .filter((run) => run.jobId !== info.jobId)
+        .map((run) => (previous ? run : { ...run, visible: false }));
+      return [next, ...others];
     });
+    setActiveRunId(info.jobId);
     // A finished run should be visible, so reopen the panel if it was collapsed.
     runsPanelRef.current?.expand();
   }, []);
+
+  /** Viewing a run puts it, and only it, on the map. */
+  const selectRun = useCallback((jobId: string) => {
+    setActiveRunId(jobId);
+    setCompletedRuns((current) =>
+      current.map((run) => ({ ...run, visible: run.jobId === jobId })),
+    );
+  }, []);
+
+  const removeRun = useCallback(
+    (jobId: string) => {
+      const remaining = completedRuns.filter((run) => run.jobId !== jobId);
+      setCompletedRuns(remaining);
+      if (activeRunId === jobId && remaining.length > 0) selectRun(remaining[0].jobId);
+    },
+    [completedRuns, activeRunId, selectRun],
+  );
 
   const updateRun = (jobId: string, patch: Partial<CompletedRun>) => {
     setCompletedRuns((current) =>
@@ -156,19 +189,14 @@ export function ExperienceWorkspace({ experience, onClose }: ExperienceWorkspace
           >
           <CompletedRunsPanel
             runs={completedRuns}
+            activeRunId={activeRunId}
+            onSelectRun={selectRun}
             onToggleVisible={(jobId) =>
               updateRun(jobId, {
                 visible: !completedRuns.find((run) => run.jobId === jobId)?.visible,
               })
             }
-            onToggleSelected={(jobId) =>
-              updateRun(jobId, {
-                selected: !completedRuns.find((run) => run.jobId === jobId)?.selected,
-              })
-            }
-            onRemove={(jobId) =>
-              setCompletedRuns((current) => current.filter((run) => run.jobId !== jobId))
-            }
+            onRemove={removeRun}
           />
           </ResizablePanel>
         )}

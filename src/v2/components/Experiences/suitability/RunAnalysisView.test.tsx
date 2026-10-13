@@ -113,6 +113,15 @@ describe('RunAnalysisView', () => {
     expect(html).toContain('Suitability distribution');
   });
 
+  it('draws the overall distribution as one bar per whole-point band', () => {
+    const html = renderToStaticMarkup(<RunAnalysisView analysis={analysis} record={record} />);
+    // The fixture has two bands, so two bars labelled by their score interval.
+    const barLabels = html.match(/<span class="min-w-0 flex-1 truncate text-center tabular-nums">[^<]+<\/span>/g);
+    expect(barLabels).toHaveLength(2);
+    expect(barLabels?.[0]).toContain('1\u20132');
+    expect(barLabels?.[1]).toContain('4\u20135');
+  });
+
   it('falls back to service names without a run record', () => {
     const html = renderToStaticMarkup(<RunAnalysisView analysis={analysis} record={null} />);
     expect(html).toContain('Drainage');

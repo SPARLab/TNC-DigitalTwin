@@ -273,6 +273,7 @@ export function ExperiencesPage() {
       {experience && (
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <ExperienceWorkspace
+            key={experience.id}
             experience={experience}
             onClose={() => navigate('/experiences')}
           />
