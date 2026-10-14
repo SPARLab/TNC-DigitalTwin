@@ -1,54 +1,12 @@
-import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
+import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
 import { useCatalog } from '../../../context/CatalogContext';
 import { useLayers } from '../../../context/LayerContext';
-import { fetchLayerLegend, type ArcGISLegendItem, type ArcGISLayerLegend } from '../../../services/tncArcgisService';
-import type { CatalogLayer } from '../../../types';
 import { SelectAllClearAllActions } from '../../shared/SelectAllClearAllActions';
-import { getNhdPlusFlowlineLegend, isNhdPlusFlowlinesLayer } from '../../Map/layers/nhdPlusFlowlinesStyle';
-import { useTNCArcGIS } from '../../../context/TNCArcGISContext';
-
-function getTargetLayer(activeLayer: CatalogLayer | undefined, selectedSubLayerId: string | undefined): CatalogLayer | null {
-  if (!activeLayer) return null;
-  const isServiceParent = !!(
-    activeLayer.catalogMeta?.isMultiLayerService
-    && !activeLayer.catalogMeta?.parentServiceId
-    && activeLayer.catalogMeta?.siblingLayers
-    && activeLayer.catalogMeta.siblingLayers.length > 0
-  );
-  if (!isServiceParent) return activeLayer;
-  const siblings = activeLayer.catalogMeta?.siblingLayers ?? [];
-  return siblings.find(layer => layer.id === selectedSubLayerId) ?? siblings[0] ?? null;
-}
-
-function LegendSwatch({ item, index }: { item: ArcGISLegendItem; index: number }) {
-  const [imgFailed, setImgFailed] = useState(false);
-  const handleError = useCallback(() => setImgFailed(true), []);
-
-  const hasSrc = !imgFailed && (item.imageData || item.imageUrl);
-  if (hasSrc) {
-    return (
-      <img
-        id={`tnc-arcgis-legend-widget-swatch-image-${index}`}
-        src={
-          item.imageData
-            ? `data:${item.contentType || 'image/png'};base64,${item.imageData}`
-            : item.imageUrl
-        }
-        alt={item.label || `Legend ${index + 1}`}
-        className="max-w-full max-h-full object-contain"
-        onError={handleError}
-      />
-    );
-  }
-  return (
-    <span
-      id={`tnc-arcgis-legend-widget-swatch-fallback-${index}`}
-      className="w-5 h-1 rounded-full"
-      style={{ backgroundColor: item.swatchColor || '#9ca3af' }}
-    />
-  );
-}
+import { DraggableWidget } from '../shared/DraggableWidget';
+import { LegendCloseButton } from '../shared/LegendCloseButton';
+import { TNCArcGISLegendBody } from './TNCArcGISLegendBody';
+import { getLegendTargetLayer, useTNCArcGISLegend } from './useTNCArcGISLegend';
 
 function buildLegendWhereClause(field: string, selectedValues: Array<string | number>): string {
   if (!field.trim() || selectedValues.length === 0) return '1=1';
@@ -62,56 +20,16 @@ function buildLegendWhereClause(field: string, selectedValues: Array<string | nu
 
 export function TNCArcGISLegendWidget() {
   const [isExpanded, setIsExpanded] = useState(true);
-  const [legendLoading, setLegendLoading] = useState(false);
-  const [legendError, setLegendError] = useState<string | null>(null);
-  const [legendData, setLegendData] = useState<ArcGISLayerLegend | null>(null);
   const [selectedLegendValues, setSelectedLegendValues] = useState<Array<string | number>>([]);
 
   const { activeLayer, syncTNCArcGISFilters, isLayerPinned, pinLayer, getPinnedByLayerId } = useLayers();
   const { layerMap } = useCatalog();
-  const { imagerySliceSelection } = useTNCArcGIS();
   const activeCatalogLayer = activeLayer ? layerMap.get(activeLayer.layerId) : undefined;
   const targetLayer = useMemo(
-    () => getTargetLayer(activeCatalogLayer, activeLayer?.selectedSubLayerId),
+    () => getLegendTargetLayer(activeCatalogLayer, activeLayer?.selectedSubLayerId),
     [activeCatalogLayer, activeLayer?.selectedSubLayerId],
   );
-  const imageryVariable = (
-    imagerySliceSelection
-    && imagerySliceSelection.layerId === targetLayer?.id
-      ? imagerySliceSelection.variableName
-      : getPinnedByLayerId(targetLayer?.id ?? '')?.tncArcgisFilters?.imageryVariable
-  ) || undefined;
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadLegend() {
-      if (!targetLayer?.catalogMeta) {
-        setLegendData(null);
-        setLegendError('Legend unavailable: missing ArcGIS metadata.');
-        return;
-      }
-      setLegendLoading(true);
-      setLegendError(null);
-      try {
-        const legend = isNhdPlusFlowlinesLayer(targetLayer)
-          ? getNhdPlusFlowlineLegend()
-          : await fetchLayerLegend(targetLayer.catalogMeta, { variableName: imageryVariable });
-        if (cancelled) return;
-        setLegendData(legend);
-        if (!legend || legend.items.length === 0) {
-          setLegendError('No legend entries returned for this layer.');
-        }
-      } catch (error) {
-        if (cancelled) return;
-        setLegendData(null);
-        setLegendError(error instanceof Error ? error.message : 'Legend fetch failed.');
-      } finally {
-        if (!cancelled) setLegendLoading(false);
-      }
-    }
-    void loadLegend();
-    return () => { cancelled = true; };
-  }, [targetLayer, imageryVariable]);
+  const { legendData, legendLoading, legendError } = useTNCArcGISLegend(targetLayer);
 
   useEffect(() => {
     setSelectedLegendValues([]);
@@ -198,12 +116,12 @@ export function TNCArcGISLegendWidget() {
   };
 
   return (
-    <div
+    <DraggableWidget
       id="tnc-arcgis-legend-widget"
-      className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-72"
+      className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-legend-widget max-w-legend-fit"
     >
       <div
-        id="tnc-arcgis-legend-widget-header"
+        id="tnc-arcgis-legend-widget-header" data-drag-handle
         className={`flex items-center justify-between px-4 py-3 bg-gray-50 cursor-pointer ${
           isExpanded ? 'border-b border-gray-200 rounded-t-lg' : 'rounded-lg'
         }`}
@@ -229,16 +147,19 @@ export function TNCArcGISLegendWidget() {
           </h3>
           {legendLoading && <Loader2 id="tnc-arcgis-legend-widget-loading-spinner" className="w-4 h-4 animate-spin text-gray-500" />}
         </div>
-        {canFilterByLegend && (
-          <SelectAllClearAllActions
-            idPrefix="tnc-arcgis-legend-widget"
-            onSelectAll={selectAllLegendValues}
-            onClearAll={clearLegendValues}
-            disableSelectAll={allLegendValuesSelected}
-            disableClearAll={noLegendValuesSelected}
-            stopPropagation
-          />
-        )}
+        <div className="flex flex-shrink-0 items-center gap-1">
+          {canFilterByLegend && (
+            <SelectAllClearAllActions
+              idPrefix="tnc-arcgis-legend-widget"
+              onSelectAll={selectAllLegendValues}
+              onClearAll={clearLegendValues}
+              disableSelectAll={allLegendValuesSelected}
+              disableClearAll={noLegendValuesSelected}
+              stopPropagation
+            />
+          )}
+          <LegendCloseButton id="tnc-arcgis-legend-widget-close-button" />
+        </div>
       </div>
 
       {isExpanded && (
@@ -251,68 +172,14 @@ export function TNCArcGISLegendWidget() {
             {targetLayer.name}
           </p>
 
-          {legendError ? (
-            <div id="tnc-arcgis-legend-widget-error" className="px-2 py-2 text-sm text-amber-700">
-              {legendError}
-            </div>
-          ) : legendData?.rendererType === 'continuous' && legendData.gradientCss ? (
-            <div id="tnc-arcgis-legend-widget-ramp" className="px-1 py-1 space-y-2">
-              <p className="text-[11px] text-gray-500">{legendData.rampTitle ?? 'Value'}</p>
-              <div
-                id="tnc-arcgis-legend-widget-gradient"
-                className="h-3 w-full rounded-full border border-gray-200"
-                style={{ background: legendData.gradientCss }}
-              />
-              <div className="flex justify-between text-[11px] text-gray-600">
-                <span>{legendData.rampLowLabel ?? 'Low'}</span>
-                <span>{legendData.rampHighLabel ?? 'High'}</span>
-              </div>
-              {legendData.items.filter(item => item.label.toLowerCase().includes('no ')).map((item, index) => (
-                <div
-                  id={`tnc-arcgis-legend-widget-nodata-${index}`}
-                  key={`nodata-${index}`}
-                  className="flex items-center gap-2 pt-1"
-                >
-                  <span
-                    className="w-5 h-0.5 rounded-full"
-                    style={{ backgroundColor: item.swatchColor || '#9ca3af' }}
-                  />
-                  <span className="text-xs text-gray-600">{item.label}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div id="tnc-arcgis-legend-widget-items" className="space-y-1 max-h-[26rem] overflow-y-auto">
-              {(legendData?.items ?? []).map((item, index) => (
-                <div
-                  id={`tnc-arcgis-legend-widget-item-${index}`}
-                  key={`${legendData?.layerId ?? 'layer'}-legend-${index}`}
-                  onClick={() => canFilterByLegend && toggleLegendValue(item.value)}
-                  className={`flex items-center gap-2 rounded-md px-2 py-1.5 border border-transparent ${
-                    canFilterByLegend ? 'cursor-pointer hover:bg-blue-50' : 'hover:bg-gray-50'
-                  } ${
-                    item.value !== undefined && selectedLegendValues.includes(item.value)
-                      ? 'bg-blue-100 border-blue-200'
-                      : ''
-                  }`}
-                >
-                  <div
-                    id={`tnc-arcgis-legend-widget-swatch-${index}`}
-                    className="w-7 h-7 border border-gray-200 rounded bg-white flex items-center justify-center flex-shrink-0 overflow-hidden"
-                  >
-                    <LegendSwatch item={item} index={index} />
-                  </div>
-                  <span
-                    id={`tnc-arcgis-legend-widget-label-${index}`}
-                    className="text-sm text-gray-700 truncate min-w-0"
-                    title={item.label}
-                  >
-                    {item.label || `Legend item ${index + 1}`}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+          <TNCArcGISLegendBody
+            idPrefix="tnc-arcgis-legend-widget"
+            legendData={legendData}
+            legendError={legendError}
+            canFilter={canFilterByLegend}
+            selectedValues={selectedLegendValues}
+            onToggleValue={toggleLegendValue}
+          />
 
           {canFilterByLegend && (
             <p id="tnc-arcgis-legend-widget-filter-hint" className="px-1 text-[11px] text-gray-500">
@@ -323,6 +190,6 @@ export function TNCArcGISLegendWidget() {
           )}
         </div>
       )}
-    </div>
+    </DraggableWidget>
   );
 }

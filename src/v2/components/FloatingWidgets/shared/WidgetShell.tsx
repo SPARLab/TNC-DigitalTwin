@@ -3,6 +3,7 @@
 // ============================================================================
 
 import type { ReactNode } from 'react';
+import { DraggableWidget } from './DraggableWidget';
 
 interface WidgetShellProps {
   id: string;
@@ -11,23 +12,23 @@ interface WidgetShellProps {
   className?: string;
 }
 
-/** Floating widget container with shadow and backdrop blur */
+/** Floating widget container with shadow and backdrop blur. Can be dragged aside. */
 export function WidgetShell({ id, position, children, className = '' }: WidgetShellProps) {
   const positionClasses = position === 'top-left'
     ? 'left-4 top-4'
     : 'right-4 top-4'; // right sidebar is a sibling outside MapContainer
 
   return (
-    <div
+    <DraggableWidget
       id={id}
       role="region"
-      className={`absolute ${positionClasses} w-[320px] bg-white rounded-xl z-40 ${className}`}
+      className={`absolute ${positionClasses} w-map-widget max-w-widget-fit bg-white rounded-xl z-40 ${className}`}
       style={{
         boxShadow: '0 4px 20px -4px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05)',
         backdropFilter: 'blur(8px)',
       }}
     >
       {children}
-    </div>
+    </DraggableWidget>
   );
 }

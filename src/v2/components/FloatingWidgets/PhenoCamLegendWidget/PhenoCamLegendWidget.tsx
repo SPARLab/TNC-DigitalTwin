@@ -2,20 +2,24 @@
 // PhenoCamLegendWidget — Floating map key for circled camera markers.
 // ============================================================================
 
+import { DraggableWidget } from '../shared/DraggableWidget';
+import { LegendCloseButton } from '../shared/LegendCloseButton';
+
 export function PhenoCamLegendWidget() {
   return (
-    <div
+    <DraggableWidget
       id="phenocam-legend-widget"
-      className="absolute bottom-6 right-6 z-30 w-72 rounded-lg border border-gray-300 bg-white shadow-lg"
+      className="absolute bottom-6 right-6 z-30 w-legend-widget max-w-legend-fit rounded-lg border border-gray-300 bg-white shadow-lg"
       aria-label="PhenoCam map legend"
     >
       <div
-        id="phenocam-legend-header"
-        className="rounded-t-lg border-b border-gray-200 bg-gray-50 px-4 py-3"
+        id="phenocam-legend-header" data-drag-handle
+        className="flex items-center justify-between rounded-t-lg border-b border-gray-200 bg-gray-50 px-4 py-3"
       >
         <h3 id="phenocam-legend-title" className="text-sm font-semibold text-gray-900">
           PhenoCam Sites
         </h3>
+        <LegendCloseButton id="phenocam-legend-close-button" />
       </div>
 
       <div id="phenocam-legend-content" className="rounded-b-lg p-3">
@@ -45,6 +49,6 @@ export function PhenoCamLegendWidget() {
           Click a site to browse its timestamped archive images.
         </p>
       </div>
-    </div>
+    </DraggableWidget>
   );
 }

@@ -3,7 +3,7 @@
 // Provides: activateLayer, pinLayer, unpinLayer, toggleVisibility, reorder
 // ============================================================================
 
-import { createContext, useContext, useCallback, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type {
   ActiveLayer,
   PinnedLayer,
@@ -371,10 +371,19 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     isActive: activeLayer?.layerId === p.layerId,
   }));
 
+  // `isPinned` is derived from the pinned list rather than trusted as stored. It is
+  // set when the layer is activated, so pinning in the same tick (the catalog's
+  // first-load preserve boundary) would otherwise leave a pinned layer marked unpinned.
+  const syncedActiveLayer = useMemo<ActiveLayer | null>(() => {
+    if (!activeLayer) return null;
+    const isPinned = pinnedLayers.some((p) => p.layerId === activeLayer.layerId);
+    return isPinned === activeLayer.isPinned ? activeLayer : { ...activeLayer, isPinned };
+  }, [activeLayer, pinnedLayers]);
+
   return (
     <LayerContext.Provider
       value={{
-        activeLayer,
+        activeLayer: syncedActiveLayer,
         activateLayer,
         setActiveServiceSubLayer,
         deactivateLayer,

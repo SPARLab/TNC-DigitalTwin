@@ -14,6 +14,7 @@ import type { PinnedLayer, CountDisplayMode } from '../../../types';
 import { FilterIndicator } from './FilterIndicator';
 import { PinnedLayerChildRow } from './PinnedLayerChildRow';
 import { NewViewButton } from './NewViewButton';
+import { LayerRowLegend } from './LayerRowLegend';
 import { EyeSlotLoadingSpinner } from '../../shared/loading/LoadingPrimitives';
 
 interface PinnedLayerRowProps {
@@ -233,7 +234,7 @@ export function PinnedLayerRow({
           </button>
 
           {/* Layer name */}
-          <span className={`text-sm flex-1 truncate ${
+          <span title={displayName} className={`text-sm flex-1 min-w-0 break-words leading-snug line-clamp-2 ${
             layer.isVisible ? 'text-gray-700' : 'text-gray-400'
           } ${layer.isActive || isNested ? 'font-semibold text-gray-900' : ''}`}>
             {displayName}
@@ -282,6 +283,9 @@ export function PinnedLayerRow({
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
+
+        {/* Legend entries while the layer is on the map */}
+        <LayerRowLegend layerId={layer.layerId} isOnMap={isNested ? !!parentEyeOn : layer.isVisible} />
 
         {/* Expanded panel for flat rows — filter sources only */}
         {!isNested && supportsPinnedFilters && (

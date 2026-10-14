@@ -616,3 +616,11 @@ body {
     transition: opacity 150ms ease-in-out;
   }
 }
+
+/* Floating map widgets are moved by dragging their title bar (see DraggableWidget). */
+[data-drag-handle] {
+  touch-action: none;
+}
+[data-drag-handle]:not([role='button']) {
+  cursor: grab;
+}

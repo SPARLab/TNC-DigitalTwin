@@ -19,6 +19,7 @@ import { useLayers } from '../../context/LayerContext';
 import { useMap } from '../../context/MapContext';
 import { useCatalog } from '../../context/CatalogContext';
 import type { LiveAlert } from '../../services/liveAlertService';
+import { NavMenuButton } from '../NavRail/NavMenuButton';
 
 interface V2HeaderProps {
   onOpenExportBuilder?: () => void;
@@ -169,6 +170,7 @@ export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
                  border-b border-emerald-900/20 flex-shrink-0 relative z-[90]"
     >
       <div className="flex items-center gap-3">
+        <NavMenuButton className="-ml-2" />
         <h1 className="text-sm font-semibold text-white">
           Dangermond Preserve Data Catalog
         </h1>

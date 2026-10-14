@@ -1,16 +1,18 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { DraggableWidget } from '../shared/DraggableWidget';
+import { LegendCloseButton } from '../shared/LegendCloseButton';
 
 export function MOTUSLegendWidget() {
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
-    <div
+    <DraggableWidget
       id="motus-map-legend-widget"
-      className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-80"
+      className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-map-widget max-w-legend-fit"
     >
       <div
-        id="motus-map-legend-widget-header"
+        id="motus-map-legend-widget-header" data-drag-handle
         role="button"
         tabIndex={0}
         onClick={() => setIsExpanded((previous) => !previous)}
@@ -26,20 +28,23 @@ export function MOTUSLegendWidget() {
         <h3 id="motus-map-legend-widget-title" className="text-sm font-semibold text-gray-900">
           MOTUS Map Legend
         </h3>
-        <button
-          id="motus-map-legend-widget-expand-toggle"
-          type="button"
-          className="p-0.5 hover:bg-gray-200 rounded transition-colors"
-          onClick={(event) => {
-            event.stopPropagation();
-            setIsExpanded((previous) => !previous);
-          }}
-          aria-label={isExpanded ? 'Collapse MOTUS legend' : 'Expand MOTUS legend'}
-        >
-          {isExpanded
-            ? <ChevronDown className="w-4 h-4 text-gray-600" />
-            : <ChevronRight className="w-4 h-4 text-gray-600" />}
-        </button>
+        <div className="flex flex-shrink-0 items-center gap-1">
+          <button
+            id="motus-map-legend-widget-expand-toggle"
+            type="button"
+            className="p-0.5 hover:bg-gray-200 rounded transition-colors"
+            onClick={(event) => {
+              event.stopPropagation();
+              setIsExpanded((previous) => !previous);
+            }}
+            aria-label={isExpanded ? 'Collapse MOTUS legend' : 'Expand MOTUS legend'}
+          >
+            {isExpanded
+              ? <ChevronDown className="w-4 h-4 text-gray-600" />
+              : <ChevronRight className="w-4 h-4 text-gray-600" />}
+          </button>
+          <LegendCloseButton id="motus-map-legend-widget-close-button" />
+        </div>
       </div>
 
       {isExpanded && (
@@ -61,6 +66,6 @@ export function MOTUSLegendWidget() {
           </p>
         </div>
       )}
-    </div>
+    </DraggableWidget>
   );
 }

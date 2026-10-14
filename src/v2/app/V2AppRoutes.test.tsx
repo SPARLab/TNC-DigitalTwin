@@ -1,8 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { V2AppRoutes } from './V2AppRoutes';
+import { closeNavMenu } from '../components/NavRail/navMenuStore';
+import { mockViewport, restoreViewport } from '../hooks/viewportTestUtils';
 
 // The catalog page and the data-source provider tree pull in the ArcGIS SDK and
 // every service client. Routing is the subject here, so both are stubbed.
@@ -111,5 +113,39 @@ describe('V2AppRoutes', () => {
     expect(
       screen.getByRole('heading', { name: 'Research Digital Twin of Nature' }),
     ).toBeInTheDocument();
+  });
+});
+
+describe('V2AppRoutes on a narrow window', () => {
+  beforeEach(() => mockViewport({ narrow: true }));
+  afterEach(() => {
+    closeNavMenu();
+    restoreViewport();
+  });
+
+  it('puts a hamburger in a slim top bar on pages without their own header', () => {
+    renderAt('/about');
+
+    const bar = document.getElementById('narrow-top-bar');
+    expect(bar).not.toBeNull();
+    expect(bar).toHaveTextContent('About');
+    expect(screen.getByRole('button', { name: 'Open navigation menu' })).toBeInTheDocument();
+  });
+
+  it('leaves the catalog to its own header instead of adding a second bar', () => {
+    renderAt('/catalog');
+
+    expect(document.getElementById('narrow-top-bar')).toBeNull();
+  });
+
+  it('opens the menu and navigates from it', async () => {
+    const user = userEvent.setup();
+    renderAt('/about');
+
+    await user.click(screen.getByRole('button', { name: 'Open navigation menu' }));
+    await user.click(screen.getByTitle('Live Monitoring'));
+
+    expect(screen.getByRole('heading', { name: 'Live Monitoring' })).toBeInTheDocument();
+    expect(document.getElementById('platform-nav-rail')).toHaveClass('invisible');
   });
 });

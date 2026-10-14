@@ -1,6 +1,9 @@
 import { useCallback } from 'react';
-import { Plus, Minus, Compass } from 'lucide-react';
+import { Plus, Minus, Compass, LayoutList } from 'lucide-react';
 import { useMap } from '../../context/MapContext';
+import { useLayers } from '../../context/LayerContext';
+import { getAdapterForActiveLayer } from '../../dataSources/registry';
+import { showLegend, useLegendHidden } from '../FloatingWidgets/shared/legendVisibilityStore';
 import LidarIcon from '../../../components/icons/LidarIcon';
 import { BasemapPicker } from './BasemapPicker';
 
@@ -9,6 +12,9 @@ const BTN =
 
 export function MapControlRail() {
   const { viewRef, viewMode, toggleViewMode, isLidarVisible, toggleLidarVisibility } = useMap();
+  const { activeLayer } = useLayers();
+  const legendHidden = useLegendHidden();
+  const hasLegend = !!getAdapterForActiveLayer(activeLayer ?? null)?.LegendWidget;
 
   const zoomIn = useCallback(() => {
     const view = viewRef.current;
@@ -50,6 +56,20 @@ export function MapControlRail() {
       </button>
 
       <BasemapPicker />
+
+      {/* Legend — appears once the legend widget has been closed, to bring it back */}
+      {hasLegend && legendHidden && (
+        <button
+          id="legend-visibility-toggle"
+          type="button"
+          onClick={showLegend}
+          aria-label="Show legend"
+          title="Show legend"
+          className={BTN}
+        >
+          <LayoutList className="h-4 w-4" />
+        </button>
+      )}
 
       {/* LiDAR — 3D only */}
       {is3D && (

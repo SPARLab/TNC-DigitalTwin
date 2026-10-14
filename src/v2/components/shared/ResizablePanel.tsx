@@ -21,8 +21,11 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
+import { COMPACT_VIEWPORT_QUERY, PORTRAIT_VIEWPORT_QUERY } from '../../config/layout';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { closeSheet, setOpenSheet, setTabVisible, useOpenSheetKey } from './bottomSheetStore';
 
 interface PanelState {
   width: number;
@@ -81,8 +84,13 @@ export const ResizablePanel = forwardRef<ResizablePanelHandle, ResizablePanelPro
     },
     ref,
   ) {
+    // Laptop-sized windows open panels at their minimum width so the map keeps
+    // most of the screen. Widths a visitor has already dragged to are kept.
+    const isCompact = useMediaQuery(COMPACT_VIEWPORT_QUERY);
+    const openingWidth = isCompact ? minWidth : defaultWidth;
+
     const [state, setState] = useLocalStorage<PanelState>(storageKey, {
-      width: defaultWidth,
+      width: openingWidth,
       isCollapsed: false,
     });
 
@@ -101,16 +109,76 @@ export const ResizablePanel = forwardRef<ResizablePanelHandle, ResizablePanelPro
       [setState, minWidth, maxWidth],
     );
 
+    // Phones held upright have no room for side columns, so each panel becomes a
+    // bottom sheet instead. Only one is open at a time and none is remembered.
+    const isPortrait = useMediaQuery(PORTRAIT_VIEWPORT_QUERY);
+    const openSheetKey = useOpenSheetKey();
+    const isSheetOpen = openSheetKey === storageKey;
+    const sheetRef = useRef<HTMLElement>(null);
+    const tabRef = useRef<HTMLButtonElement>(null);
+
+    // Tell the page whether this tab is on screen, so it can leave room for the
+    // tab bar. Pages kept mounted but hidden report not visible.
+    useEffect(() => {
+      if (!isPortrait) return undefined;
+      const tab = tabRef.current;
+
+      if (!tab || typeof IntersectionObserver === 'undefined') {
+        setTabVisible(storageKey, true);
+        return () => setTabVisible(storageKey, false);
+      }
+
+      const observer = new IntersectionObserver(([entry]) => {
+        setTabVisible(storageKey, entry?.isIntersecting ?? false);
+      });
+      observer.observe(tab);
+      return () => {
+        observer.disconnect();
+        setTabVisible(storageKey, false);
+      };
+    }, [isPortrait, storageKey]);
+
     const setCollapsed = useCallback(
       (collapsed: boolean) => {
+        if (isPortrait) {
+          if (collapsed) closeSheet(storageKey);
+          else setOpenSheet(storageKey);
+          return;
+        }
         setState((current) => ({ ...current, isCollapsed: collapsed }));
       },
-      [setState],
+      [isPortrait, storageKey, setState],
     );
 
     const toggleCollapsed = useCallback(() => {
+      if (isPortrait) {
+        if (isSheetOpen) closeSheet(storageKey);
+        else setOpenSheet(storageKey);
+        return;
+      }
       setState((current) => ({ ...current, isCollapsed: !current.isCollapsed }));
-    }, [setState]);
+    }, [isPortrait, isSheetOpen, storageKey, setState]);
+
+    // An open sheet dismisses on Escape or a press outside it.
+    useEffect(() => {
+      if (!isPortrait || !isSheetOpen) return undefined;
+
+      const onPointerDown = (event: PointerEvent) => {
+        const target = event.target as Node;
+        if (sheetRef.current?.contains(target) || tabRef.current?.contains(target)) return;
+        closeSheet(storageKey);
+      };
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') closeSheet(storageKey);
+      };
+
+      document.addEventListener('pointerdown', onPointerDown, true);
+      document.addEventListener('keydown', onKeyDown);
+      return () => {
+        document.removeEventListener('pointerdown', onPointerDown, true);
+        document.removeEventListener('keydown', onKeyDown);
+      };
+    }, [isPortrait, isSheetOpen, storageKey]);
 
     useImperativeHandle(
       ref,
@@ -205,6 +273,47 @@ export const ResizablePanel = forwardRef<ResizablePanelHandle, ResizablePanelPro
       ? (isCollapsed ? ChevronRight : ChevronLeft)
       : (isCollapsed ? ChevronLeft : ChevronRight);
 
+    if (isPortrait) {
+      // A tab on its own half of the bottom edge, always on screen so any panel can
+      // be opened (or swapped for another) whichever sheet is up. The sheet rises
+      // from just above the tab bar. Contents stay mounted while closed so scroll
+      // position, searches and form entries survive.
+      return (
+        <>
+          <button
+            ref={tabRef}
+            type="button"
+            data-sheet-tab
+            onClick={toggleCollapsed}
+            aria-expanded={isSheetOpen}
+            aria-label={`${isSheetOpen ? 'Collapse' : 'Expand'} ${label}`}
+            className={`fixed bottom-0 z-[70] flex h-10 w-1/2 items-center justify-between gap-2 border-t px-4 text-sm font-semibold capitalize shadow-[0_-2px_8px_rgba(0,0,0,0.12)] ${
+              isLeft ? 'left-0' : 'right-0 border-l border-l-gray-200'
+            } ${
+              isSheetOpen
+                ? 'border-t-2 border-t-emerald-600 bg-emerald-50 text-emerald-900'
+                : 'border-t-gray-200 bg-white text-gray-800'
+            }`}
+          >
+            <span className="truncate">{label}</span>
+            {isSheetOpen ? (
+              <ChevronDown className="h-4 w-4 flex-shrink-0" />
+            ) : (
+              <ChevronUp className="h-4 w-4 flex-shrink-0 text-gray-500" />
+            )}
+          </button>
+          <aside
+            ref={sheetRef}
+            aria-label={label}
+            className="fixed inset-x-0 bottom-10 z-[65] h-[55dvh] overflow-hidden rounded-t-xl bg-white shadow-[0_-8px_24px_rgba(0,0,0,0.2)]"
+            style={{ display: isSheetOpen ? undefined : 'none' }}
+          >
+            <div style={{ width: '100%', height: '100%' }}>{children}</div>
+          </aside>
+        </>
+      );
+    }
+
     return (
       <aside
         aria-label={label}
@@ -240,7 +349,7 @@ export const ResizablePanel = forwardRef<ResizablePanelHandle, ResizablePanelPro
             tabIndex={0}
             onPointerDown={handlePointerDown}
             onKeyDown={handleKeyDown}
-            onDoubleClick={() => setWidth(defaultWidth)}
+            onDoubleClick={() => setWidth(openingWidth)}
             title="Drag to resize, double-click to reset"
             className={`absolute inset-y-0 z-10 w-1.5 cursor-col-resize transition-colors hover:bg-emerald-300/60 focus:bg-emerald-400/70 focus:outline-none ${
               isDragging ? 'bg-emerald-400/70' : 'bg-transparent'

@@ -1,18 +1,16 @@
 // ============================================================================
-// V2App — platform entry point. Mounts the router inside the desktop gate;
-// per-page layout lives in app/V2AppRoutes.tsx.
+// V2App — platform entry point. Mounts the router; per-page layout lives in
+// app/V2AppRoutes.tsx. There is no minimum screen width: pages are expected to
+// adapt (or at least stay usable) at laptop and smaller sizes.
 // ============================================================================
 
 import { BrowserRouter } from 'react-router-dom';
-import { DesktopOnlyGate } from '../components/DesktopOnlyGate';
 import { V2AppRoutes } from './app/V2AppRoutes';
 
 export default function V2App() {
   return (
-    <DesktopOnlyGate>
-      <BrowserRouter>
-        <V2AppRoutes />
-      </BrowserRouter>
-    </DesktopOnlyGate>
+    <BrowserRouter>
+      <V2AppRoutes />
+    </BrowserRouter>
   );
 }

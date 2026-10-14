@@ -17,7 +17,9 @@ import { getConcreteActiveLayerId } from '../../Map/mapLayers/internal/mapLayerS
 import { resolveRendererBinding } from '../../../config/monitoringRenderers';
 import { SENSOR_VARIABLES, type SensorVariableId } from '../../../services/sensorService';
 import { rampToCssGradient, WIND_RAMP, type ColorRamp } from '../../Monitoring/internal/colorRamps';
-import { prettifyLatestField } from '../../../services/dendraStationService';
+import { prettifyLatestField } from '../../../services/dendraStationService';
+import { DraggableWidget } from '../shared/DraggableWidget';
+import { LegendCloseButton } from '../shared/LegendCloseButton';
 
 function isSensorVariableId(id: string): id is SensorVariableId {
   return Object.prototype.hasOwnProperty.call(SENSOR_VARIABLES, id);
@@ -111,13 +113,13 @@ export function DendraLegendWidget() {
       : serviceTitle;
 
   return (
-    <div
+    <DraggableWidget
       id="dendra-legend-widget"
-      className="absolute bottom-6 right-6 z-30 w-72 rounded-lg border border-gray-300 bg-white shadow-lg"
+      className="absolute bottom-6 right-6 z-30 w-legend-widget max-w-legend-fit rounded-lg border border-gray-300 bg-white shadow-lg"
       aria-label="Dendra map legend"
     >
       <div
-        id="dendra-legend-widget-header"
+        id="dendra-legend-widget-header" data-drag-handle
         role="button"
         tabIndex={0}
         onClick={toggleExpanded}
@@ -135,22 +137,25 @@ export function DendraLegendWidget() {
         <h3 id="dendra-legend-widget-title" className="truncate text-sm font-semibold text-gray-900">
           {title}
         </h3>
-        <button
-          id="dendra-legend-widget-expand-toggle"
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            toggleExpanded();
-          }}
-          className="rounded p-0.5 transition-colors hover:bg-gray-200"
-          aria-label={isExpanded ? 'Collapse Dendra legend' : 'Expand Dendra legend'}
-        >
-          {isExpanded ? (
-            <ChevronDown className="h-4 w-4 text-gray-600" />
-          ) : (
-            <ChevronRight className="h-4 w-4 text-gray-600" />
-          )}
-        </button>
+        <div className="flex flex-shrink-0 items-center gap-1">
+          <button
+            id="dendra-legend-widget-expand-toggle"
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleExpanded();
+            }}
+            className="rounded p-0.5 transition-colors hover:bg-gray-200"
+            aria-label={isExpanded ? 'Collapse Dendra legend' : 'Expand Dendra legend'}
+          >
+            {isExpanded ? (
+              <ChevronDown className="h-4 w-4 text-gray-600" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-gray-600" />
+            )}
+          </button>
+          <LegendCloseButton id="dendra-legend-widget-close-button" />
+        </div>
       </div>
 
       {isExpanded && (
@@ -228,6 +233,6 @@ export function DendraLegendWidget() {
           )}
         </div>
       )}
-    </div>
+    </DraggableWidget>
   );
 }
