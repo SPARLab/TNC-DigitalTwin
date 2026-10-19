@@ -71,6 +71,7 @@ export function ExperienceWorkspace({ experience, onClose }: ExperienceWorkspace
         title: info.title,
         summary: info.summary ?? previous?.summary ?? '',
         record: info.record ?? previous?.record ?? null,
+        outputType: info.outputType ?? previous?.outputType ?? null,
         analysis: info.analysis ?? previous?.analysis ?? null,
         visible: previous?.visible ?? true,
         selected: previous?.selected ?? false,

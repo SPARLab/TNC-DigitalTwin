@@ -54,7 +54,7 @@ export function CompletedRunsPanel({
           htmlFor="completed-runs-select"
           className="block text-[10px] font-semibold uppercase tracking-wide text-gray-500"
         >
-          Runs{runs.length > 0 ? ` (${runs.length})` : ''}
+          Habitat Suitability Runs{runs.length > 0 ? ` (${runs.length})` : ''}
         </label>
 
         {!activeRun ? (
@@ -112,7 +112,11 @@ export function CompletedRunsPanel({
                           );
                         }
                       })
-                      .catch(() => setDownloadNote('The results package could not be built.'))
+                      .catch((error: unknown) => {
+                        const reason = error instanceof Error ? error.message : String(error);
+                        console.error('Results package failed', error);
+                        setDownloadNote(`The results package could not be built (${reason}).`);
+                      })
                       .finally(() => setPackagingId(null));
                   }}
                   title="Download the TIFF, map image, layers and weights, and distribution chart as one zip"
