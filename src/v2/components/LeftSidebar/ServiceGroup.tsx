@@ -8,6 +8,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent } from 'react';
 import type { CatalogLayer } from '../../types';
 import { useLayers } from '../../context/LayerContext';
+import { isImageryMosaicCatalogTag } from '../../utils/mosaicCatalogExpand';
 import { LayerRow } from './LayerRow';
 
 interface ServiceGroupProps {
@@ -51,7 +52,8 @@ function focusFirstVisibleChildRow(childrenGroupId: string) {
   firstVisible?.focus();
 }
 
-function formatServiceSummary(layerCount: number, tableCount: number): string {
+function formatServiceSummary(layerCount: number, tableCount: number, isMosaic = false): string {
+  if (isMosaic) return `${layerCount} ${layerCount === 1 ? 'variable' : 'variables'}`;
   const layerLabel = `${layerCount} ${layerCount === 1 ? 'layer' : 'layers'}`;
   if (tableCount <= 0) return layerLabel;
   const tableLabel = `${tableCount} ${tableCount === 1 ? 'table' : 'tables'}`;
@@ -77,7 +79,11 @@ export function ServiceGroup({
     && layers.some((layer) => layer.id === activeLayer.layerId);
   const childrenGroupId = `service-group-children-${service.id}`;
   const tableCount = service.catalogMeta?.tableCount ?? 0;
-  const summaryText = formatServiceSummary(layers.length, tableCount);
+  const summaryText = formatServiceSummary(
+    layers.length,
+    tableCount,
+    isImageryMosaicCatalogTag(service.catalogMeta?.catalogTag),
+  );
 
   const announceExpandState = (expanded: boolean) => {
     if (expanded) {

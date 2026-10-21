@@ -37,6 +37,15 @@ export interface CatalogLayer {
     /** Latest/Data measure column for `dendraRole: 'measure'` rows (e.g. depth_to_groundwater). */
     valueField?: string;
     /**
+     * Imagery-mosaic variable rows (`catalogTag: 'imagery_mosaic'`): the mosaic
+     * item this row draws, e.g. `bio13`. Absent on the mosaic's parent row.
+     */
+    mosaicTag?: string;
+    /** Human-readable variable name, e.g. `Annual Precipitation Amount`. */
+    mosaicLabel?: string;
+    /** Display units for the mosaic variable (e.g. `°C`, `mm`). */
+    mosaicUnits?: string;
+    /**
      * True when a dendra measure has no Latest readings with `latest_time`
      * in the last 7 days (sidebar: greyed out / not map-activatable).
      */

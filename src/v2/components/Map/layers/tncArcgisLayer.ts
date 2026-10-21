@@ -9,6 +9,10 @@ import { createNhdPlusFlowlineRenderer, isNhdPlusFlowlinesLayer } from './nhdPlu
 import { attachNhdPlusTerrainElevationFallback } from './nhdPlusFlowlinesTerrainFallback';
 import { createPreserveBoundaryRenderer } from '../../Monitoring/internal/boundaryOutlineLayer';
 import { isPreserveBoundaryCatalogLayer } from '../../../utils/findPreserveBoundaryCatalogLayer';
+import { buildViridisStretchRenderer } from '../../../utils/imagerySliceUtils';
+import { isMosaicVariableLayer } from '../../../utils/mosaicCatalogExpand';
+import { mosaicRuleForTag } from '../../../services/mosaicSelection';
+import { fetchMosaicVariableRange } from '../../../services/mosaicVariableRange';
 
 function sanitizeArcGisBaseUrl(serverBaseUrl: string): string {
   const trimmed = serverBaseUrl.trim().replace(/\/+$/, '');
@@ -117,6 +121,43 @@ function attachFeatureLayerLoadFallback(
   });
 }
 
+/**
+ * One variable of an imagery mosaic (e.g. CHELSA bio12). The ImageServer holds
+ * every variable as its own mosaic item, so the layer is filtered to the item
+ * whose name carries the tag, then stretched to that item's own value range.
+ * Until the range arrives the service default (Bio01's stretch) is drawn.
+ */
+function createMosaicVariableLayer(options: {
+  id: string;
+  url: string;
+  visible: boolean;
+  tag: string;
+}): ImageryLayer {
+  const { id, url, visible, tag } = options;
+  const mosaicRule = mosaicRuleForTag(tag);
+  const layer = new ImageryLayer({
+    id,
+    url,
+    visible,
+    // Coarse analysis grid: keep hard cell edges when zoomed in.
+    interpolation: 'nearest',
+    ...(mosaicRule ? { mosaicRule } : {}),
+  });
+
+  // A renderer set before the layer loads is discarded by the SDK, so wait.
+  void layer.load()
+    .then(() => fetchMosaicVariableRange({ url, tag }))
+    .then((range) => {
+      if (!range || layer.destroyed) return;
+      layer.renderer = buildViridisStretchRenderer(range.min, range.max);
+    })
+    .catch(() => {
+      // The service default renderer stays; the legend reports the failure.
+    });
+
+  return layer;
+}
+
 /** Build a map-ready ArcGIS layer for TNC catalog layers. */
 export function createTNCArcGISLayer(options: {
   id: string;
@@ -220,6 +261,9 @@ export function createTNCArcGISLayer(options: {
   // ImageServer: tiled AGOL/Living Atlas → ImageryTileLayer; otherwise ImageryLayer.
   if (meta.hasImageServer) {
     const url = buildImageServerServiceUrl(meta);
+    if (isMosaicVariableLayer(layer) && meta.mosaicTag) {
+      return createMosaicVariableLayer({ id, url, visible, tag: meta.mosaicTag });
+    }
     if (isTiledImageServerUrl(url) || isTiledImageServerUrl(meta.serverBaseUrl)) {
       return new ImageryTileLayer({
         id,

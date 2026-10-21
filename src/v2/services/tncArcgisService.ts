@@ -2,6 +2,7 @@ import type { CatalogLayer } from '../types';
 import { fetchArcGisJson, isObject } from './tncArcgis/client';
 import { normalizeArcGisDescription, prepareArcGisHtml } from './tncArcgis/normalizers';
 import { runWithFeatureLayerFallback } from './tncArcgis/queries';
+import { fetchMosaicVariableRange } from './mosaicVariableRange';
 
 export interface LayerSchema {
   fields: Array<Record<string, unknown>>;
@@ -495,6 +496,21 @@ export async function fetchLayerLegend(
       : 0)
     : 0;
   const serviceRootUrl = buildServiceRootUrl(meta);
+
+  // Mosaic variable rows: the service legend and stats describe the mosaic's first
+  // item (Bio01), so build the ramp from this variable's own range instead.
+  if (meta.hasImageServer && meta.mosaicTag) {
+    const range = await fetchMosaicVariableRange({ url: serviceRootUrl, tag: meta.mosaicTag });
+    if (!range) return null;
+    return buildContinuousRampLegend({
+      layerId: 0,
+      layerName: meta.mosaicLabel ?? meta.mosaicTag,
+      rampTitle: meta.mosaicLabel ?? meta.mosaicTag,
+      min: range.min,
+      max: range.max,
+      unit: meta.mosaicUnits,
+    });
+  }
 
   // Strategy 1: Try /legend endpoint at the service root.
   // Tiled ImageServers (TilesOnly) often return Invalid URL here — fall through.

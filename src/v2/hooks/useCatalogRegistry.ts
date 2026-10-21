@@ -25,6 +25,7 @@ import {
   findDendraLocationsChild,
   measureFieldsFromLatestMeta,
 } from '../utils/dendraCatalogExpand';
+import { expandMosaicVariableChildren, isImageryMosaicCatalogTag } from '../utils/mosaicCatalogExpand';
 
 const BASE =
   'https://dangermondpreserve-spatial.com/server/rest/services/Dangermond_Preserve_Data_Catalog/FeatureServer';
@@ -596,6 +597,32 @@ export function useCatalogRegistry(): CatalogRegistryState {
           for (const d of visibleDatasets) {
             const ds = detectDataSource(d);
             const serviceKey = serviceKeyForDataset(d);
+
+            // Imagery mosaics (e.g. CHELSA bioclim): one service row, one child per
+            // mosaic variable. Each child draws the same ImageServer locked to its tag.
+            if (serviceKey && d.has_image_server === 1 && isImageryMosaicCatalogTag(d.catalog_tag)) {
+              if (seenServiceKeys.has(serviceKey)) continue;
+              seenServiceKeys.add(serviceKey);
+
+              const serviceId = toServiceLayerId(d.id);
+              const mosaicRow = layerFromDataset(d, categoryId);
+              const children = expandMosaicVariableChildren({ parentId: serviceId, parent: mosaicRow });
+              const parent: CatalogLayer = {
+                ...mosaicRow,
+                id: serviceId,
+                catalogMeta: {
+                  ...mosaicRow.catalogMeta!,
+                  isMultiLayerService: true,
+                  siblingLayers: children,
+                },
+              };
+
+              layers.push(parent, ...children);
+              allLayers.set(parent.id, parent);
+              for (const child of children) allLayers.set(child.id, child);
+              continue;
+            }
+
             const canGroupAsMultiLayerService =
               !!serviceKey
               && (ds === 'tnc-arcgis' || ds === 'dendra' || ds === 'motus');
