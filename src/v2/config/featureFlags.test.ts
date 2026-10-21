@@ -9,7 +9,7 @@ describe('production hiding', () => {
     const hidden = platformNavItems(false);
     expect(hidden.some((item) => item.path === '/notebooks')).toBe(false);
     // Everything else stays.
-    expect(hidden.map((item) => item.path)).toEqual(['/', '/about', '/catalog', '/monitoring', '/experiences']);
+    expect(hidden.map((item) => item.path)).toEqual(['/', '/about', '/monitoring', '/catalog', '/experiences']);
   });
 
   it('sends the notebooks routes nowhere when disabled, so they redirect home', () => {

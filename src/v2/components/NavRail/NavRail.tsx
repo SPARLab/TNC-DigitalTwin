@@ -4,9 +4,9 @@
 // mockup sidebar.
 // ============================================================================
 
-import { useEffect, useRef } from 'react';
+import { Fragment, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Leaf, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
 import { PLATFORM_NAV_ITEMS, isNavItemActive } from '../../config/navigation';
 import { COMPACT_VIEWPORT_QUERY, NARROW_VIEWPORT_QUERY } from '../../config/layout';
@@ -82,19 +82,6 @@ export function NavRail() {
             isExpanded ? 'flex-row' : 'flex-col'
           }`}
         >
-          <button
-            id="nav-rail-brand-button"
-            type="button"
-            onClick={() => {
-              navigate('/');
-              closeNavMenu();
-            }}
-            title="Dangermond Preserve Digital Twin"
-            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md text-emerald-300 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <Leaf className="h-5 w-5" />
-          </button>
-
           {isExpanded && (
             <span
               id="nav-rail-brand-text"
@@ -139,7 +126,8 @@ export function NavRail() {
             const isActive = !isComingSoon && isNavItemActive(item.path, location.pathname);
 
             return (
-              <li key={item.path} className={isExpanded ? 'w-full' : ''}>
+              <Fragment key={item.path}>
+              <li className={isExpanded ? 'w-full' : ''}>
                 <button
                   id={`nav-rail-item-${item.path === '/' ? 'home' : item.path.slice(1)}`}
                   type="button"
@@ -187,6 +175,15 @@ export function NavRail() {
                   )}
                 </button>
               </li>
+              {item.path === '/about' && (
+                <li
+                  id="nav-rail-info-divider"
+                  role="separator"
+                  aria-hidden="true"
+                  className={`h-px flex-shrink-0 self-stretch bg-white/10 ${isExpanded ? 'mx-1' : 'mx-2'} my-1`}
+                />
+              )}
+              </Fragment>
             );
           })}
         </ul>
