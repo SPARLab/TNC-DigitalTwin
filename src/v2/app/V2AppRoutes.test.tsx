@@ -107,6 +107,27 @@ describe('V2AppRoutes', () => {
     expect(screen.getByText('Experience Map')).toBeInTheDocument();
   });
 
+  it('renders coming-soon experience cards as inert, non-button cards', async () => {
+    const user = userEvent.setup();
+    renderAt('/experiences');
+
+    const soon = document.getElementById('experience-card-sdm');
+    expect(soon).not.toBeNull();
+    expect(soon?.tagName).not.toBe('BUTTON');
+    expect(soon).toHaveAttribute('aria-disabled', 'true');
+    expect(document.getElementById('experience-card-suitability')?.tagName).toBe('BUTTON');
+
+    await user.click(soon as HTMLElement);
+    expect(screen.queryByText('Experience Map')).not.toBeInTheDocument();
+  });
+
+  it('redirects a coming-soon experience URL back to the gallery', () => {
+    renderAt('/experiences/sdm');
+
+    expect(screen.queryByText('Experience Map')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Experiences' })).toBeInTheDocument();
+  });
+
   it('redirects unknown paths back to the landing page', () => {
     renderAt('/does-not-exist');
 
