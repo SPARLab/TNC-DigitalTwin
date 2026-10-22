@@ -128,7 +128,7 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     kind: 'model',
     usesRealTimeData: false,
     comingSoon: false,
-    image: DEFAULT_THUMBNAIL,
+    image: '/experience-thumbnails/creek-water-visualization.jpg',
     standaloneAppUrl: '/standalone-experiences/creek-water-visualization/index.html',
   },
   {
