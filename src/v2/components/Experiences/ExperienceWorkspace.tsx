@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Construction, X } from 'lucide-react';
 import { ResizablePanel, type ResizablePanelHandle } from '../shared/ResizablePanel';
-import type { ExperienceDefinition } from '../../config/experienceRegistry';
+import type { MapWorkspaceExperience } from '../../config/experienceRegistry';
 import { readStoredArcGisToken } from '../../services/geoprocessingService';
 import { CompletedRunsPanel } from './CompletedRunsPanel';
 import { loadStoredRuns, runsStorageKey, saveStoredRuns } from './completedRunsStorage';
@@ -18,11 +18,11 @@ import { SuitabilityPanel } from './SuitabilityPanel';
 import type { CompletedRun, PointsAction, PreviewAction, RasterScope, ResultLayerInfo } from './types';
 
 interface ExperienceWorkspaceProps {
-  experience: ExperienceDefinition;
+  experience: MapWorkspaceExperience;
   onClose: () => void;
 }
 
-function ComingSoonPanel({ experience }: { experience: ExperienceDefinition }) {
+function ComingSoonPanel({ experience }: { experience: MapWorkspaceExperience }) {
   const Icon = experience.icon;
 
   return (
