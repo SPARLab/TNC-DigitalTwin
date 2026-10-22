@@ -27,7 +27,11 @@ import { fetchRasterHistogram, formatHistogramValue } from '../../services/raste
 import { continuousLegend, continuousStretchOptions, stretchLegendFromRenderer, type StretchLegend } from './stretchLegend';
 import { CollapsibleSection } from './CollapsibleSection';
 import { firstBandStatistics } from '../../services/layerRasterInfo';
-import { SUITABILITY_DISPLAY_SUBLAYER_TITLE, suitabilityRampColors } from './suitabilityRamp';
+import {
+  SDM_BINARY_CLASSES,
+  SUITABILITY_DISPLAY_SUBLAYER_TITLE,
+  suitabilityRampColors,
+} from './suitabilityRamp';
 import { isTiledImageServerUrl } from '../Map/layers/tncArcgisLayer';
 import { createPreserveOutlineLayer } from '../Monitoring/internal/boundaryOutlineLayer';
 import {
@@ -95,9 +99,9 @@ function colormapRenderer(swatches: ClassSwatch[]): RasterColormapRenderer {
 }
 
 /**
- * A suitability result map service has one sublayer per output. Draw only the
- * colored display raster when the service has one, found by its name. If no
- * sublayer matches (older services publish just the score raster), every
+ * A result map service (suitability or SDM) has one sublayer per output. Draw
+ * only the colored display raster when the service has one, found by its name.
+ * If no sublayer matches (older services publish just the data raster), every
  * sublayer is left as the service defines it.
  */
 function showSuitabilityDisplaySublayer(layer: MapImageLayer): void {
@@ -254,7 +258,7 @@ export function ExperienceMap({
             existing.sublayers?.forEach((sublayer) => {
               sublayer.listMode = 'hide';
             });
-            if (run.record) showSuitabilityDisplaySublayer(existing);
+            showSuitabilityDisplaySublayer(existing);
           }).catch(() => {
             // Keep the layer-list row even if the result map image is unavailable.
           });
@@ -274,7 +278,7 @@ export function ExperienceMap({
         layer.sublayers?.forEach((sublayer) => {
           sublayer.listMode = 'hide';
         });
-        if (run.record) showSuitabilityDisplaySublayer(layer);
+        showSuitabilityDisplaySublayer(layer);
         if (cancelled || !run.visible) return undefined;
         const extent = layer.fullExtent;
         if (extent) return view.goTo(extent.expand(1.2));
@@ -296,9 +300,11 @@ export function ExperienceMap({
       return undefined;
     }
     Promise.all(runs.map(async (run): Promise<ResultLegend> => {
-      // Suitability results are RGB, so the service legend would list bands.
-      // They get a score ramp instead.
-      if (run.record) return { jobId: run.jobId, title: run.title, swatches: [] };
+      // Suitability and SDM results are color-table rasters, so the service
+      // legend would list every color level. They get a ramp or classes instead.
+      if (run.record || run.outputType) {
+        return { jobId: run.jobId, title: run.title, swatches: [] };
+      }
       try {
         const response = await fetch(`${run.mapServerUrl}/jobs/${run.jobId}/legend?f=json`);
         if (!response.ok) return { jobId: run.jobId, title: run.title, swatches: [] };
@@ -624,7 +630,9 @@ export function ExperienceMap({
 
   const visibleResultLegends = resultLegends.filter((legend) => {
     const run = resultLayers.find((item) => item.jobId === legend.jobId);
-    return Boolean(run?.visible && (run.record || legend.swatches.length > 0));
+    return Boolean(
+      run?.visible && (run.record || run.outputType || legend.swatches.length > 0),
+    );
   });
   const suitabilityRampColorList = suitabilityRampColors();
 
@@ -662,7 +670,9 @@ export function ExperienceMap({
             <p className="py-2 text-sm text-gray-500">Preview a layer to see its legend.</p>
           )}
           {visibleResultLegends.map((legend) => {
-            const scaleMax = resultLayers.find((item) => item.jobId === legend.jobId)?.record?.scaleMax;
+            const legendRun = resultLayers.find((item) => item.jobId === legend.jobId);
+            const scaleMax = legendRun?.record?.scaleMax;
+            const sdmOutputType = legendRun?.outputType ?? null;
             return (
             <section key={legend.jobId} className="mb-3 last:mb-0">
               <h4 className="mb-1.5 break-words text-sm font-semibold text-gray-900">{legend.title}</h4>
@@ -678,7 +688,32 @@ export function ExperienceMap({
                   </div>
                 </div>
               )}
-              {scaleMax == null && legend.swatches.length > 0 && (
+              {sdmOutputType === 'Probability' && (
+                <div className="flex items-stretch gap-2">
+                  <div
+                    className="h-28 w-4 flex-shrink-0 rounded-sm border border-black/10"
+                    style={{ background: `linear-gradient(to top, ${suitabilityRampColorList.join(', ')})` }}
+                  />
+                  <div className="flex flex-col justify-between py-0.5 text-xs text-gray-600">
+                    <span>1 (high probability)</span>
+                    <span>0 (low probability)</span>
+                  </div>
+                </div>
+              )}
+              {sdmOutputType === 'Binary' && (
+                <ul className="flex flex-col gap-1">
+                  {SDM_BINARY_CLASSES.map((entry) => (
+                    <li key={entry.label} className="flex items-center gap-2">
+                      <span
+                        className="inline-block h-4 w-6 flex-shrink-0 rounded-sm border border-black/10"
+                        style={{ background: entry.color }}
+                      />
+                      <span className="text-sm text-gray-700">{entry.label}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {scaleMax == null && sdmOutputType == null && legend.swatches.length > 0 && (
                 <ul className="flex flex-col gap-1">
                   {legend.swatches.map((swatch) => (
                     <li key={`${swatch.label}-${swatch.imageData.slice(0, 12)}`} className="flex items-center gap-2">

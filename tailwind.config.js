@@ -7,8 +7,8 @@ export default {
   theme: {
     // =======================================================================
     // CUSTOM BREAKPOINTS
-    // Desktop-only application: minimum supported width is 1024px (lg)
-    // Below lg, DesktopOnlyGate shows a blocking message
+    // Laptop-first application. There is no blocking minimum width; panels and
+    // floating widgets shrink as the window narrows (see config/layout.ts).
     // =======================================================================
     screens: {
       'sm': '640px',
@@ -314,6 +314,11 @@ export default {
       // Reference: docs/design-system/DESIGN_SYSTEM.md
       // =======================================================================
       width: {
+        // Floating map widgets: fluid between 250px and their old fixed size, so
+        // they thin out on laptop screens instead of crowding the map.
+        'map-widget': 'clamp(250px, 22vw, 320px)',     // Map Layers, Bookmarked Items
+        'legend-widget': 'clamp(250px, 20vw, 288px)',  // Legend widgets
+
         // Left sidebar (Data Catalog)
         // Aligned with midpoint between Category and Spatial Filter buttons
         // Formula: page-padding + filter-width + (gap/2)
@@ -375,6 +380,9 @@ export default {
       },
       
       maxWidth: {
+        // Keep floating widgets inside the map when its panels squeeze it
+        'widget-fit': 'calc(100% - 2rem)',
+        'legend-fit': 'calc(100% - 3rem)',
         'card': '24rem',                  // 384px
         // Legend container max-width (responsive)
         // lg: 180px, xl: 208px, 2xl: 240px

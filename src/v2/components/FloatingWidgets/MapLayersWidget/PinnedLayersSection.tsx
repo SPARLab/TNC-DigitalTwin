@@ -1,11 +1,11 @@
 // ============================================================================
-// PinnedLayersSection — Blue-accented section for all pinned layers
+// PinnedLayersSection — The Map Layers list: pinned layers (plus an optional
+// leading row for the active layer while it is unpinned)
 // Supports both flat and nested (multi-view) structures
 // Drag-and-drop powered by @dnd-kit (DFT-034)
 // ============================================================================
 
-import { useState, useEffect } from 'react';
-import { Pin } from 'lucide-react';
+import { useState, useEffect, type ReactNode } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -24,6 +24,8 @@ import { PinnedLayerRow } from './PinnedLayerRow';
 
 interface PinnedLayersSectionProps {
   layers: PinnedLayer[];
+  /** Extra row shown first in the list, e.g. the active layer before it is pinned. */
+  leadingRow?: ReactNode;
   isDendraLayer?: (layerId: string) => boolean;
   supportsPinnedFilters?: (layerId: string) => boolean;
   loadingByLayerId: Map<string, boolean>;
@@ -50,6 +52,7 @@ interface PinnedLayersSectionProps {
 
 export function PinnedLayersSection({
   layers,
+  leadingRow,
   isDendraLayer,
   supportsPinnedFilters,
   loadingByLayerId,
@@ -208,17 +211,6 @@ export function PinnedLayersSection({
 
   return (
     <div id="pinned-layers-section">
-      {/* Section header */}
-      <div className="px-3 py-1.5 bg-blue-50 border-y border-blue-200 flex items-center gap-1">
-        <Pin className="w-3 h-3 text-blue-700" />
-        <span className="text-[10px] font-semibold text-blue-700 uppercase tracking-wide">
-          Pinned Layers
-        </span>
-        <span className="bg-blue-200 text-blue-800 px-1.5 rounded-full text-[10px] ml-1">
-          {layers.length}
-        </span>
-      </div>
-
       {/* Layer rows */}
       <DndContext
         sensors={sensors}
@@ -230,6 +222,7 @@ export function PinnedLayersSection({
           strategy={verticalListSortingStrategy}
         >
           <div id="pinned-layers-list" className="px-2 py-2 space-y-1">
+            {leadingRow}
             {layers.length > 0 ? (
               layers.map((layer, index) => {
                 const isJustPinned = justPinnedId === layer.id;
@@ -287,7 +280,7 @@ export function PinnedLayersSection({
                 }
                 return collapseWrapper;
               })
-            ) : (
+            ) : leadingRow ? null : (
               <p className="text-sm text-gray-500 px-1 py-2">Pinned layers appear here.</p>
             )}
           </div>

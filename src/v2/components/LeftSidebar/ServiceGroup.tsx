@@ -8,6 +8,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent } from 'react';
 import type { CatalogLayer } from '../../types';
 import { useLayers } from '../../context/LayerContext';
+import { isImageryMosaicCatalogTag } from '../../utils/mosaicCatalogExpand';
 import { LayerRow } from './LayerRow';
 
 interface ServiceGroupProps {
@@ -51,7 +52,8 @@ function focusFirstVisibleChildRow(childrenGroupId: string) {
   firstVisible?.focus();
 }
 
-function formatServiceSummary(layerCount: number, tableCount: number): string {
+function formatServiceSummary(layerCount: number, tableCount: number, isMosaic = false): string {
+  if (isMosaic) return `${layerCount} ${layerCount === 1 ? 'variable' : 'variables'}`;
   const layerLabel = `${layerCount} ${layerCount === 1 ? 'layer' : 'layers'}`;
   if (tableCount <= 0) return layerLabel;
   const tableLabel = `${tableCount} ${tableCount === 1 ? 'table' : 'tables'}`;
@@ -70,9 +72,18 @@ export function ServiceGroup({
 }: ServiceGroupProps) {
   const { activeLayer, activateLayer } = useLayers();
   const isActiveService = activeLayer?.layerId === service.id && !!activeLayer.isService;
+  // True while one of this service's sublayers is the active layer (the sublayer row
+  // carries the strong highlight, so the service row only gets a softer tint).
+  const hasActiveSublayer = !isActiveService
+    && !!activeLayer
+    && layers.some((layer) => layer.id === activeLayer.layerId);
   const childrenGroupId = `service-group-children-${service.id}`;
   const tableCount = service.catalogMeta?.tableCount ?? 0;
-  const summaryText = formatServiceSummary(layers.length, tableCount);
+  const summaryText = formatServiceSummary(
+    layers.length,
+    tableCount,
+    isImageryMosaicCatalogTag(service.catalogMeta?.catalogTag),
+  );
 
   const announceExpandState = (expanded: boolean) => {
     if (expanded) {
@@ -168,12 +179,17 @@ export function ServiceGroup({
                     ${
                       isActiveService
                         ? 'bg-amber-50 border border-amber-300 font-semibold text-gray-900 shadow-sm'
-                        : isExpanded
+                        : hasActiveSublayer
                           ? 'bg-amber-50/70 border border-amber-200 text-gray-900'
-                          : 'bg-white border border-gray-200 text-gray-700 hover:border-gray-400 hover:shadow-sm'
+                          : isExpanded
+                            ? 'bg-slate-50 border border-slate-300 text-gray-900 hover:border-gray-400'
+                            : 'bg-white border border-gray-200 text-gray-700 hover:border-gray-400 hover:shadow-sm'
                     }`}
       >
-        <span className={`truncate min-w-0 flex-1 text-left ${isActiveService ? 'font-semibold' : ''}`}>
+        <span
+          title={service.name}
+          className={`min-w-0 flex-1 break-words text-left leading-snug line-clamp-2 ${isActiveService ? 'font-semibold' : ''}`}
+        >
           {renderHighlightedText(service.name, highlightQuery)}
         </span>
 

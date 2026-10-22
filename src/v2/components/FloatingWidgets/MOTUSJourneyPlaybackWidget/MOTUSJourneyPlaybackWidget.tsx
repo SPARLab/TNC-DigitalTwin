@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { Pause, Play, SkipBack, SkipForward } from 'lucide-react';
 import { useLayers } from '../../../context/LayerContext';
 import { useCatalog } from '../../../context/CatalogContext';
-import { useMotusFilter } from '../../../context/MotusFilterContext';
+import { useMotusFilter } from '../../../context/MotusFilterContext';
+import { DraggableWidget } from '../shared/DraggableWidget';
 
 const PLAYBACK_SPEED_OPTIONS: Array<0.5 | 1 | 2 | 4> = [0.5, 1, 2, 4];
 const BASE_STEP_DURATION_MS = 1200;
@@ -122,12 +123,13 @@ export function MOTUSJourneyPlaybackWidget() {
   if (!hasMotusOnMap) return null;
 
   return (
-    <section
+    <DraggableWidget
       id="motus-journey-playback-widget"
+      as="section"
       className="absolute bottom-6 left-6 z-30 w-[380px] rounded-lg border border-gray-300 bg-white/95 shadow-lg backdrop-blur-sm"
       aria-label="MOTUS journey playback controls"
     >
-      <div id="motus-journey-playback-widget-header" className="border-b border-gray-200 bg-gray-50 px-4 py-3">
+      <div id="motus-journey-playback-widget-header" data-drag-handle className="border-b border-gray-200 bg-gray-50 px-4 py-3">
         <div id="motus-journey-playback-widget-title-row" className="flex items-center justify-between gap-3">
           <h3 id="motus-journey-playback-widget-title" className="text-sm font-semibold text-gray-900">
             Journey playback
@@ -277,6 +279,6 @@ export function MOTUSJourneyPlaybackWidget() {
           </p>
         )}
       </div>
-    </section>
+    </DraggableWidget>
   );
 }

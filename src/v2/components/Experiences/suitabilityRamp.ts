@@ -27,3 +27,15 @@ export const SUITABILITY_DISPLAY_SUBLAYER_TITLE = /display|rgb/i;
 export function suitabilityRampColors(): string[] {
   return SUITABILITY_RAMP.map(([r, g, b]) => `rgb(${r}, ${g}, ${b})`);
 }
+
+/**
+ * The SDM tool paints Probability output with the same ramp (0 to 1) and Binary
+ * output with these two classes.
+ *
+ * Keep in sync with DISPLAY_RAMP and BINARY_COLORS in
+ * twin_models/sdms/scripts/arcgis/sdm_rf_tool.pyt.
+ */
+export const SDM_BINARY_CLASSES: ReadonlyArray<{ label: string; color: string }> = [
+  { label: 'Suitable', color: 'rgb(26, 150, 65)' },
+  { label: 'Unsuitable', color: 'rgb(209, 213, 219)' },
+];

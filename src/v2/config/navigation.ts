@@ -33,16 +33,16 @@ const ALL_PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     icon: Info,
   },
   {
-    path: '/catalog',
-    label: 'Data Catalog',
-    shortLabel: 'Data',
-    icon: Database,
-  },
-  {
     path: '/monitoring',
     label: 'Live Monitoring',
     shortLabel: 'Live',
     icon: Radio,
+  },
+  {
+    path: '/catalog',
+    label: 'Data Catalog',
+    shortLabel: 'Data',
+    icon: Database,
   },
   {
     path: '/experiences',

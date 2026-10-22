@@ -26,7 +26,13 @@ export const CHART_WIDTH = 560;
 export const CHART_HEIGHT = 320;
 
 export function packageStem(name: string): string {
-  const cleaned = name.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '').trim();
+  const cleaned = name
+    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '')
+    // Keep names plain ASCII (dashes, middots, spaces) so every OS and browser saves them.
+    .replace(/[\u2010-\u2015\u00b7]/g, '-')
+    .replace(/[^\x20-\x7e]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
   return cleaned || 'suitability-run';
 }
 
@@ -243,6 +249,9 @@ export function saveBlob(blob: Blob, filename: string): void {
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = filename;
+  document.body.appendChild(anchor);
   anchor.click();
-  URL.revokeObjectURL(url);
+  anchor.remove();
+  // Revoking straight away can cancel the download in some browsers.
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }

@@ -1,9 +1,11 @@
 // ============================================================================
-// MapLayersWidget — Floating widget: Active Layer (amber) + Pinned Layers (blue)
+// MapLayersWidget — Floating widget with one list of layers.
+// The layer being viewed is highlighted amber; if it isn't pinned yet it is listed
+// first with a Pin button, and joins the pinned layers once pinned.
 // Position: top-left of map area. Always visible (no close, only collapse).
 // ============================================================================
 
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Layers, Pin } from 'lucide-react';
 import { useLayers } from '../../../context/LayerContext';
 import { useCatalog } from '../../../context/CatalogContext';
@@ -12,17 +14,18 @@ import { useCacheStatusByDataSource, layerSupportsPinnedFilters } from '../../..
 import { formatStationDisplayName } from '../../../services/dendraStationService';
 import { WidgetShell } from '../shared/WidgetShell';
 import { WidgetHeader } from '../shared/WidgetHeader';
-import { CountDisplayDropdown } from '../shared/CountDisplayDropdown';
-import { ActiveLayerSection } from './ActiveLayerSection';
+import { InfoButton } from '../shared/InfoButton';
 import { PinnedLayersSection } from './PinnedLayersSection';
+import { UnpinnedActiveLayerRow } from './UnpinnedActiveLayerRow';
+import { LegendToggleButton } from './LegendToggleButton';
+import { LayerLegendsVisibleProvider, useLayerLegendsPreference } from './layerLegendsPreference';
 import type { ActiveLayer, CountDisplayMode } from '../../../types';
+
+const COUNT_DISPLAY_MODE: CountDisplayMode = 'results-expanded';
 
 export function MapLayersWidget() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [countDisplayMode, setCountDisplayMode] = useState<CountDisplayMode>('results-expanded');
-  const [displayedActiveLayer, setDisplayedActiveLayer] = useState<ActiveLayer | null>(null);
-  const [isExiting, setIsExiting] = useState(false);
-  const exitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showLegends, setShowLegends] = useLayerLegendsPreference();
   const {
     activeLayer,
     pinnedLayers,
@@ -37,8 +40,6 @@ export function MapLayersWidget() {
     renameView,
     activateLayer,
     requestEditFilters,
-    undoStack,
-    undo,
   } = useLayers();
   const { layerMap } = useCatalog();
   const { chartPanels } = useDendra();
@@ -145,19 +146,6 @@ export function MapLayersWidget() {
       return [pinnedLayer.layerId, isSourceLoading];
     }),
   );
-  const activeLayerIsDroneDeploy = concreteActiveLayer?.dataSource === 'drone'
-    || concreteActiveLayer?.layerId === 'dataset-193';
-  const activeLayerIsMotus = concreteActiveLayer?.dataSource === 'motus';
-  const activeLayerIsDataOne = concreteActiveLayer?.dataSource === 'dataone'
-    || concreteActiveLayer?.layerId === 'dataone-datasets';
-  const activeLayerCacheStatus = concreteActiveLayer
-    ? (activeLayerIsDroneDeploy
-      ? cacheStatusByDataSource.drone
-      : cacheStatusByDataSource[concreteActiveLayer.dataSource])
-    : null;
-  const activeLayerIsLoading = activeLayerIsDroneDeploy || activeLayerIsDataOne || activeLayerIsMotus
-    ? !!activeLayerCacheStatus?.loading
-    : (!!activeLayerCacheStatus?.loading && !activeLayerCacheStatus?.dataLoaded);
 
   const handleEditFilters = (layerId: string, viewId?: string) => {
     activateLayer(layerId, viewId);
@@ -168,153 +156,128 @@ export function MapLayersWidget() {
     clearFilters(pinnedId, viewId);
   };
 
-  // Track active layer changes for smooth exit transitions
-  useEffect(() => {
-    const shouldShow = concreteActiveLayer && !concreteActiveLayer.isPinned;
-    
-    if (shouldShow) {
-      // New active layer appeared or changed
-      if (exitTimeoutRef.current) {
-        clearTimeout(exitTimeoutRef.current);
-        exitTimeoutRef.current = null;
-      }
-      setIsExiting(false);
-      setDisplayedActiveLayer(concreteActiveLayer);
-    } else if (displayedActiveLayer && !shouldShow) {
-      // Active layer should disappear (was pinned or cleared)
-      setIsExiting(true);
-      
-      // Clear displayed layer after transition completes
-      exitTimeoutRef.current = setTimeout(() => {
-        setDisplayedActiveLayer(null);
-        setIsExiting(false);
-        exitTimeoutRef.current = null;
-      }, 300); // Match transition duration
-    }
-    
-    return () => {
-      if (exitTimeoutRef.current) {
-        clearTimeout(exitTimeoutRef.current);
-      }
-    };
-  }, [concreteActiveLayer, displayedActiveLayer]);
+  // The layer being viewed but not pinned yet is listed first, with a Pin button.
+  const unpinnedActiveLayer = concreteActiveLayer && !concreteActiveLayer.isPinned
+    ? concreteActiveLayer
+    : null;
+  const activeLayerIsDroneDeploy = unpinnedActiveLayer?.dataSource === 'drone'
+    || unpinnedActiveLayer?.layerId === 'dataset-193';
+  const activeLayerIsAlwaysLive = activeLayerIsDroneDeploy
+    || unpinnedActiveLayer?.dataSource === 'motus'
+    || unpinnedActiveLayer?.dataSource === 'dataone'
+    || unpinnedActiveLayer?.layerId === 'dataone-datasets';
+  const activeLayerCacheStatus = unpinnedActiveLayer
+    ? (activeLayerIsDroneDeploy
+      ? cacheStatusByDataSource.drone
+      : cacheStatusByDataSource[unpinnedActiveLayer.dataSource])
+    : null;
+  const activeLayerIsLoading = activeLayerIsAlwaysLive
+    ? !!activeLayerCacheStatus?.loading
+    : (!!activeLayerCacheStatus?.loading && !activeLayerCacheStatus?.dataLoaded);
 
-  const showActiveSection = !isExiting && displayedActiveLayer && !displayedActiveLayer.isPinned;
-
-  const totalCount = pinnedLayers.length + (concreteActiveLayer && !concreteActiveLayer.isPinned ? 1 : 0);
-  const canUndo = undoStack.length > 0;
-  const isEmpty = !concreteActiveLayer && pinnedLayers.length === 0;
+  const totalCount = pinnedLayers.length + (unpinnedActiveLayer ? 1 : 0);
+  const isEmpty = totalCount === 0;
 
   return (
-    <WidgetShell id="map-layers-widget" position="top-left">
-      <WidgetHeader
-        icon={<Layers className="w-4 h-4" />}
-        title="Map Layers"
-        count={totalCount}
-        isCollapsed={isCollapsed}
-        onToggleCollapse={() => setIsCollapsed(prev => !prev)}
-        canUndo={canUndo}
-        undoDescription={undoStack[0]?.description}
-        onUndo={undo}
-        customActions={
-          <CountDisplayDropdown 
-            currentMode={countDisplayMode} 
-            onModeChange={setCountDisplayMode} 
-          />
-        }
-      />
-
-      <div 
-        className="grid transition-all duration-300 ease-in-out"
-        style={{
-          gridTemplateRows: isCollapsed ? '0fr' : '1fr',
-          opacity: isCollapsed ? 0 : 1,
-        }}
-      >
-        <div id="map-layers-body" className="overflow-hidden">
-          <div id="map-layers-scroll" className="scroll-area-widget max-h-[350px] overflow-y-auto">
-            {isEmpty ? (
-              // Empty state — nothing active or pinned
-              <div className="flex flex-col items-center justify-center text-center px-6 py-8">
-                <Pin className="w-12 h-12 text-gray-300 mb-3" />
-                <p className="text-sm font-medium text-gray-700">No layers pinned</p>
-                <p className="text-sm text-gray-500 mt-1">
-                  Pin layers from the left sidebar to save them here.
-                </p>
-              </div>
-            ) : (
-              <>
-                {/* Active Layer section — only shows non-pinned active layer */}
-                <div 
-                  className="grid transition-all duration-300 ease-in-out"
-                  style={{
-                    gridTemplateRows: showActiveSection ? '1fr' : '0fr',
-                  }}
+    <LayerLegendsVisibleProvider value={showLegends}>
+      <WidgetShell id="map-layers-widget" position="top-left">
+        <WidgetHeader
+          icon={<Layers className="w-4 h-4" />}
+          title="Map Layers"
+          count={totalCount}
+          isCollapsed={isCollapsed}
+          onToggleCollapse={() => setIsCollapsed(prev => !prev)}
+          customActions={
+            <>
+              <LegendToggleButton isOn={showLegends} onToggle={() => setShowLegends(!showLegends)} />
+              <InfoButton id="map-layers-info" label="About map layers">
+                <p>Each layer contains multiple items on the map. Pin layers to save them. Create filtered views to focus on specific items.</p>
+                <p className="mt-2">The layer highlighted in yellow is the one you are viewing details for. If it has a pin button, it is not saved yet.</p>
+                <label
+                  htmlFor="map-layers-legend-option"
+                  className="mt-3 flex cursor-pointer items-center gap-2 border-t border-gray-100 pt-2.5 font-medium text-gray-800"
                 >
-                  <div className="overflow-hidden">
-                    {displayedActiveLayer && (
-                      <div
-                        className="transition-opacity duration-300 ease-in-out"
-                        style={{
-                          opacity: showActiveSection ? 1 : 0,
-                        }}
-                      >
-                        <ActiveLayerSection
-                          activeLayer={displayedActiveLayer}
-                          isLoading={activeLayerIsLoading}
-                          canPin={!displayedActiveLayer.isService}
-                          onPin={() => pinLayer(displayedActiveLayer.layerId)}
-                        />
-                      </div>
-                    )}
-                  </div>
+                  <input
+                    id="map-layers-legend-option"
+                    type="checkbox"
+                    checked={showLegends}
+                    onChange={(event) => setShowLegends(event.target.checked)}
+                    className="h-3.5 w-3.5 accent-emerald-600"
+                  />
+                  Show legend entries under layers
+                </label>
+              </InfoButton>
+            </>
+          }
+        />
+
+        <div 
+          className="grid transition-all duration-300 ease-in-out"
+          style={{
+            gridTemplateRows: isCollapsed ? '0fr' : '1fr',
+            opacity: isCollapsed ? 0 : 1,
+          }}
+        >
+          <div id="map-layers-body" className="overflow-hidden">
+            <div id="map-layers-scroll" className="scroll-area-widget max-h-[350px] overflow-y-auto">
+              {isEmpty ? (
+                // Empty state — nothing pinned or active
+                <div className="flex flex-col items-center justify-center text-center px-6 py-8">
+                  <Pin className="w-12 h-12 text-gray-300 mb-3" />
+                  <p className="text-sm font-medium text-gray-700">No layers pinned</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Pin layers from the left sidebar to save them here.
+                  </p>
                 </div>
+              ) : (
+                <>
+              {/* Pinned Layers section */}
+              <PinnedLayersSection
+                layers={pinnedLayers}
+                leadingRow={unpinnedActiveLayer ? (
+                  <UnpinnedActiveLayerRow
+                    activeLayer={unpinnedActiveLayer}
+                    isLoading={activeLayerIsLoading}
+                    onPin={() => pinLayer(unpinnedActiveLayer.layerId)}
+                  />
+                ) : undefined}
+                isDendraLayer={isDendraLayer}
+                supportsPinnedFilters={layerHasPinnedFilters}
+                loadingByLayerId={loadingByLayerId}
+                activeLayerId={concreteActiveLayer?.layerId}
+                activeViewId={concreteActiveLayer?.viewId}
+                countDisplayMode={COUNT_DISPLAY_MODE}
+                onToggleVisibility={toggleVisibility}
+                onRemove={unpinLayer}
+                onReorder={reorderLayers}
+                onActivate={activateLayer}
+                onActivateView={(layerId, viewId) => {
+                  const pinned = pinnedLayers.find(p => p.layerId === layerId);
+                  const view = viewId ? pinned?.views?.find(v => v.id === viewId) : undefined;
+                  const featureId = (
+                    layerMap.get(layerId)?.dataSource === 'dataone'
+                    || layerId === 'dataone-datasets'
+                  )
+                    ? view?.dataoneFilters?.selectedDatasetId
+                    : undefined;
+                  activateLayer(layerId, viewId, featureId);
+                }}
+                onEditFilters={handleEditFilters}
+                onClearFilters={handleClearFilters}
+                onToggleChildView={toggleChildVisibility}
+                onCreateNewView={createNewView}
+                onRemoveView={removeView}
+                onRenameView={renameView}
+                getPinnedStreamCount={getPinnedStreamCount}
+                getPinnedStreamStats={getPinnedStreamStats}
+              />
+                </>
+              )}
 
-            {/* Pinned Layers section */}
-            <PinnedLayersSection
-              layers={pinnedLayers}
-              isDendraLayer={isDendraLayer}
-              supportsPinnedFilters={layerHasPinnedFilters}
-              loadingByLayerId={loadingByLayerId}
-              activeLayerId={concreteActiveLayer?.layerId}
-              activeViewId={concreteActiveLayer?.viewId}
-              countDisplayMode={countDisplayMode}
-              onToggleVisibility={toggleVisibility}
-              onRemove={unpinLayer}
-              onReorder={reorderLayers}
-              onActivate={activateLayer}
-              onActivateView={(layerId, viewId) => {
-                const pinned = pinnedLayers.find(p => p.layerId === layerId);
-                const view = viewId ? pinned?.views?.find(v => v.id === viewId) : undefined;
-                const featureId = (
-                  layerMap.get(layerId)?.dataSource === 'dataone'
-                  || layerId === 'dataone-datasets'
-                )
-                  ? view?.dataoneFilters?.selectedDatasetId
-                  : undefined;
-                activateLayer(layerId, viewId, featureId);
-              }}
-              onEditFilters={handleEditFilters}
-              onClearFilters={handleClearFilters}
-              onToggleChildView={toggleChildVisibility}
-              onCreateNewView={createNewView}
-              onRemoveView={removeView}
-              onRenameView={renameView}
-              getPinnedStreamCount={getPinnedStreamCount}
-              getPinnedStreamStats={getPinnedStreamStats}
-            />
-              </>
-            )}
-
-            {/* Widget tip — always visible when expanded */}
-            <div className="px-3 py-2 bg-slate-50 border-t border-slate-100 rounded-b-xl">
-              <p className="text-[11px] text-gray-600">
-                Each layer contains multiple items on the map. Pin layers to save them. Create filtered views to focus on specific items.
-              </p>
             </div>
           </div>
         </div>
-      </div>
-    </WidgetShell>
+      </WidgetShell>
+    </LayerLegendsVisibleProvider>
   );
 }

@@ -59,7 +59,7 @@ export function sliceSelectionFromFilters(
   };
 }
 
-function buildViridisStretchRenderer(min: number, max: number): RasterStretchRenderer {
+export function buildViridisStretchRenderer(min: number, max: number): RasterStretchRenderer {
   const colorRamp = new MultipartColorRamp({
     colorRamps: [
       new AlgorithmicColorRamp({

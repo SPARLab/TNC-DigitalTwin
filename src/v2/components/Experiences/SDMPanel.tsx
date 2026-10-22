@@ -8,7 +8,10 @@ import { Loader2, Play } from 'lucide-react';
 import {
   DEFAULT_SDM_INPUTS,
   GP_SERVICES,
-  PREDICTOR_STACKS,
+  CLIMATE_SCENARIOS,
+  climateMosaicUrl,
+  SDM_PREDICTOR_VARIABLES,
+  type ClimateScenarioId,
 } from '../../config/geoprocessing';
 import { submitGpJob } from '../../services/geoprocessingService';
 import { experienceUi } from './experienceUi';
@@ -29,13 +32,32 @@ function sanitizeOutputName(name: string): string {
 
 export function SDMPanel({ token, onLayerAdded, onTogglePoints }: SDMPanelProps) {
   const [species, setSpecies] = useState('');
-  const [stackId, setStackId] = useState<(typeof PREDICTOR_STACKS)[number]['id']>('current');
+  const [scenarioId, setScenarioId] = useState<ClimateScenarioId>('current');
+  const [period, setPeriod] = useState<string>(CLIMATE_SCENARIOS[0].periods[0]);
   const [outputType, setOutputType] = useState<'Probability' | 'Binary'>('Probability');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [job, setJob] = useState<GpJobRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const selectedStack = PREDICTOR_STACKS.find((stack) => stack.id === stackId) ?? PREDICTOR_STACKS[0];
+  const scenario =
+    CLIMATE_SCENARIOS.find((candidate) => candidate.id === scenarioId) ?? CLIMATE_SCENARIOS[0];
+  const periods: readonly string[] = scenario.periods;
+  const activePeriod = periods.includes(period) ? period : periods[0];
+  const selectedStack = {
+    url: climateMosaicUrl(scenario, activePeriod),
+    label:
+      scenario.id === 'current'
+        ? `Current (${activePeriod})`
+        : `${scenario.label.split(' (')[0]} (${activePeriod})`,
+  };
+
+  const handleScenarioChange = (next: ClimateScenarioId) => {
+    const nextScenario = CLIMATE_SCENARIOS.find((candidate) => candidate.id === next);
+    setScenarioId(next);
+    // Keep the chosen period when the new scenario offers it, otherwise reset.
+    const available: readonly string[] = nextScenario?.periods ?? [];
+    if (!available.includes(period)) setPeriod(available[0] ?? period);
+  };
 
   const handleRun = useCallback(async () => {
     if (!species || !selectedStack) return;
@@ -50,7 +72,7 @@ export function SDMPanel({ token, onLayerAdded, onTogglePoints }: SDMPanelProps)
         {
           occurrences: DEFAULT_SDM_INPUTS.occurrences,
           species,
-          predictors: JSON.stringify({ url: selectedStack.url }),
+          predictors: selectedStack.url,
           background_points: DEFAULT_SDM_INPUTS.backgroundPoints,
           output_type: outputType,
           output_raster: sanitizeOutputName(species),
@@ -71,7 +93,8 @@ export function SDMPanel({ token, onLayerAdded, onTogglePoints }: SDMPanelProps)
           jobId,
           mapServerUrl: GP_SERVICES.sdmRandomForest.mapServer,
           groupTitle: species,
-          title: `SDM — ${selectedStack.label}`,
+          title: `${species} · ${selectedStack.label}`,
+          outputType,
         },
       });
     } catch (caught) {
@@ -101,23 +124,61 @@ export function SDMPanel({ token, onLayerAdded, onTogglePoints }: SDMPanelProps)
         </label>
         <select
           id="sdm-climate-select"
-          value={stackId}
-          onChange={(event) =>
-            setStackId(event.target.value as (typeof PREDICTOR_STACKS)[number]['id'])
-          }
+          value={scenarioId}
+          onChange={(event) => handleScenarioChange(event.target.value as ClimateScenarioId)}
           className={experienceUi.input}
         >
-          {PREDICTOR_STACKS.map((stack) => (
-            <option key={stack.id} value={stack.id}>
-              {stack.label}
+          {CLIMATE_SCENARIOS.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
             </option>
           ))}
         </select>
+        <p className={experienceUi.hint}>{scenario.hint}</p>
+      </div>
+
+      <div className={experienceUi.section}>
+        <label className={experienceUi.label} htmlFor="sdm-period-select">
+          Time Period
+        </label>
+        <select
+          id="sdm-period-select"
+          value={activePeriod}
+          onChange={(event) => setPeriod(event.target.value)}
+          disabled={periods.length < 2}
+          className={experienceUi.input}
+        >
+          {periods.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className={experienceUi.section}>
+        <span className={experienceUi.label}>Predictor Variables</span>
         <p className={experienceUi.hint}>
-          {stackId === 'current'
-            ? 'Observed climate normals (1980–2010).'
-            : `Projected climate under ${selectedStack.label.split(' ')[0]} for 2040–2070.`}
+          CHELSA V2.1 bioclimatic variables from the selected scenario (
+          <a
+            href={selectedStack.url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-emerald-700 underline"
+          >
+            source mosaic
+          </a>
+          ).
         </p>
+        <ul className="flex flex-col gap-1">
+          {SDM_PREDICTOR_VARIABLES.map((variable) => (
+            <li key={variable.tag} className={experienceUi.body}>
+              <span className="font-mono text-xs text-gray-500">{variable.tag}</span>{' '}
+              {variable.label}
+              {variable.units ? ` (${variable.units})` : ''}
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className={experienceUi.section}>

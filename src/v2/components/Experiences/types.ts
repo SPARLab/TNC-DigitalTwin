@@ -156,6 +156,9 @@ export interface SuitabilityRunAnalysis {
   bands: AnalysisBand[];
 }
 
+/** Output Type choices of the SDM Random Forest tool. */
+export type SdmOutputType = 'Probability' | 'Binary';
+
 export interface ResultLayerInfo {
   jobId: string;
   mapServerUrl: string;
@@ -164,6 +167,8 @@ export interface ResultLayerInfo {
   summary?: string;
   /** Present for suitability runs. SDM results do not carry this snapshot. */
   record?: SuitabilityRunRecord | null;
+  /** SDM runs only. Decides which legend the colored display raster gets. */
+  outputType?: SdmOutputType | null;
   /** Distribution analysis from the tool. Absent on jobs from before it existed. */
   analysis?: SuitabilityRunAnalysis | null;
   /** Rendered map image. This is a PNG even when a TIFF was requested. */
@@ -179,6 +184,8 @@ export interface CompletedRun {
   title: string;
   summary: string;
   record: SuitabilityRunRecord | null;
+  /** SDM runs only. */
+  outputType?: SdmOutputType | null;
   analysis: SuitabilityRunAnalysis | null;
   visible: boolean;
   /** Marked as an input for a later comparison. No analysis runs from this yet. */

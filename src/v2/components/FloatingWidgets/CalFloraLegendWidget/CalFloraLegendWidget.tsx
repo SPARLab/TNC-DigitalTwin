@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useLayers } from '../../../context/LayerContext';
-import { useCalFloraFilter } from '../../../context/CalFloraFilterContext';
+import { useCalFloraFilter } from '../../../context/CalFloraFilterContext';
+import { DraggableWidget } from '../shared/DraggableWidget';
+import { LegendCloseButton } from '../shared/LegendCloseButton';
 
 export function CalFloraLegendWidget() {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -13,12 +15,12 @@ export function CalFloraLegendWidget() {
   const toggleExpanded = () => setIsExpanded((previous) => !previous);
 
   return (
-    <div
+    <DraggableWidget
       id="calflora-map-legend-widget"
-      className="absolute bottom-6 right-6 z-30 w-72 rounded-lg border border-gray-300 bg-white shadow-lg"
+      className="absolute bottom-6 right-6 z-30 w-legend-widget max-w-legend-fit rounded-lg border border-gray-300 bg-white shadow-lg"
     >
       <div
-        id="calflora-map-legend-widget-header"
+        id="calflora-map-legend-widget-header" data-drag-handle
         role="button"
         tabIndex={0}
         onClick={toggleExpanded}
@@ -34,22 +36,25 @@ export function CalFloraLegendWidget() {
         <h3 id="calflora-map-legend-widget-title" className="text-sm font-semibold text-gray-900">
           CalFlora Map Legend
         </h3>
-        <button
-          id="calflora-map-legend-widget-expand-toggle"
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            toggleExpanded();
-          }}
-          className="rounded p-0.5 transition-colors hover:bg-gray-200"
-          aria-label={isExpanded ? 'Collapse CalFlora legend' : 'Expand CalFlora legend'}
-        >
-          {isExpanded ? (
-            <ChevronDown id="calflora-map-legend-widget-chevron-down-icon" className="h-4 w-4 text-gray-600" />
-          ) : (
-            <ChevronRight id="calflora-map-legend-widget-chevron-right-icon" className="h-4 w-4 text-gray-600" />
-          )}
-        </button>
+        <div className="flex flex-shrink-0 items-center gap-1">
+          <button
+            id="calflora-map-legend-widget-expand-toggle"
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleExpanded();
+            }}
+            className="rounded p-0.5 transition-colors hover:bg-gray-200"
+            aria-label={isExpanded ? 'Collapse CalFlora legend' : 'Expand CalFlora legend'}
+          >
+            {isExpanded ? (
+              <ChevronDown id="calflora-map-legend-widget-chevron-down-icon" className="h-4 w-4 text-gray-600" />
+            ) : (
+              <ChevronRight id="calflora-map-legend-widget-chevron-right-icon" className="h-4 w-4 text-gray-600" />
+            )}
+          </button>
+          <LegendCloseButton id="calflora-map-legend-widget-close-button" />
+        </div>
       </div>
 
       {isExpanded && (
@@ -74,6 +79,6 @@ export function CalFloraLegendWidget() {
           </p>
         </div>
       )}
-    </div>
+    </DraggableWidget>
   );
 }

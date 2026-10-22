@@ -11,10 +11,10 @@ interface WidgetHeaderProps {
   count?: number;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
-  // Undo (DFT-031)
-  canUndo: boolean;
+  // Undo (DFT-031) — the undo button only shows when onUndo is given
+  canUndo?: boolean;
   undoDescription?: string;
-  onUndo: () => void;
+  onUndo?: () => void;
   // Optional close button (Bookmarked Items has it, Map Layers does not)
   onClose?: () => void;
   // Optional custom actions (e.g., settings dropdown)
@@ -27,7 +27,7 @@ export function WidgetHeader({
   count,
   isCollapsed,
   onToggleCollapse,
-  canUndo,
+  canUndo = false,
   undoDescription,
   onUndo,
   onClose,
@@ -36,6 +36,7 @@ export function WidgetHeader({
   return (
     <div
       id={`${title.replace(/\s/g, '-').toLowerCase()}-header`}
+      data-drag-handle
       className={`flex items-center justify-between px-4 py-2.5 bg-slate-50 transition-all duration-300 ${
         isCollapsed 
           ? 'rounded-xl' // Rounded corners on all sides when collapsed
@@ -56,7 +57,8 @@ export function WidgetHeader({
         {/* Custom actions (e.g., settings dropdown) */}
         {customActions}
 
-        {/* Undo button — always visible, grayed when inactive */}
+        {/* Undo button — grayed when inactive; omitted when the widget has no undo */}
+        {onUndo && (
         <button
           onClick={onUndo}
           disabled={!canUndo}
@@ -69,6 +71,7 @@ export function WidgetHeader({
         >
           <Undo2 className="w-4 h-4" />
         </button>
+        )}
 
         {/* Collapse toggle — caret (>) when collapsed, (V) when expanded */}
         <button

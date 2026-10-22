@@ -216,8 +216,21 @@ export function CategoryGroup({
     ? 'relative bg-slate-100 hover:bg-gray-200 border border-transparent hover:border-slate-300 hover:shadow-[1px_0_0_0_rgba(148,163,184,0.95)] hover:z-[20]'
     : 'relative bg-slate-200 hover:bg-gray-300 border border-transparent hover:border-slate-400 hover:shadow-[1px_0_0_0_rgba(100,116,139,0.95)] hover:z-[20]';
 
-  // Outer wrapper only carries the bottom separator between top-level categories.
-  const outerWrapperClasses = isSubcategory ? '' : 'border-b border-slate-300';
+  // Top-level categories are separated by a bottom rule. Subcategories hang off a
+  // vertical rail that wraps their header AND their layers, so it is obvious which
+  // layers belong to which subcategory. The rail turns amber along the path to the
+  // active layer (matching the amber active row) and emerald when merely open.
+  const railColor = containsActiveLayer
+    ? 'border-amber-400'
+    : isExpanded
+      ? 'border-emerald-500/70'
+      : 'border-slate-300';
+  const outerWrapperClasses = isSubcategory
+    ? `ml-3 border-l-[3px] ${railColor} transition-colors`
+    : 'border-b border-slate-300';
+
+  // Accent bar on the left edge of an open top-level category header.
+  const headerAccentClasses = containsActiveLayer ? 'bg-amber-400' : 'bg-emerald-700';
 
   // Keep hook call order stable; conditionally render only after hooks run.
   if (shouldHideForSearch) return null;
@@ -226,6 +239,12 @@ export function CategoryGroup({
     <div id={`category-${category.id}`} className={outerWrapperClasses}>
       {/* Header row — hover visual scoped to this div only */}
       <div className={`transition-colors ${headerRowClasses}`}>
+      {!isSubcategory && isExpanded && (
+        <span
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-y-0 left-0 w-1 ${headerAccentClasses}`}
+        />
+      )}
       <button
         id={`category-toggle-${category.id}`}
         role="treeitem"
@@ -235,7 +254,7 @@ export function CategoryGroup({
         onKeyDown={handleHeaderKeyDown}
         className={`flex items-center w-full px-3 py-2.5 text-sm font-semibold text-gray-800
                    transition-colors cursor-pointer
-                   ${isSubcategory ? 'pl-6 text-xs font-medium' : ''}
+                   ${isSubcategory ? 'text-xs font-medium' : ''}
                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1`}
         aria-expanded={isExpanded}
         aria-controls={`category-children-${category.id}`}
@@ -245,7 +264,7 @@ export function CategoryGroup({
           : <ChevronRight className="w-4 h-4 text-gray-600 mr-1.5 flex-shrink-0 transition-transform duration-200" />
         }
         <LucideIcon name={category.icon} className="w-4 h-4 text-gray-600 mr-2 flex-shrink-0" />
-        <span className="flex-1 text-left truncate">{category.name}</span>
+        <span className="min-w-0 flex-1 break-words text-left leading-snug line-clamp-2" title={category.name}>{category.name}</span>
         <span className="ml-2 text-xs text-gray-600 bg-white rounded-full px-1.5 py-0.5 flex-shrink-0 font-medium shadow-sm">
           {totalVisible}
         </span>
@@ -265,7 +284,7 @@ export function CategoryGroup({
         <div className="overflow-hidden">
           {/* Direct layers in this category */}
           {directLayers.length > 0 && (
-            <div className={`bg-slate-50 py-1.5 space-y-1 ${isSubcategory ? 'pl-3 pr-1' : 'pl-1 pr-1'}`}>
+            <div className="bg-slate-50 py-1.5 space-y-1 pl-1 pr-1">
               {directLayers.map(layer => {
                 if (layer.catalogMeta?.parentServiceId) return null;
 

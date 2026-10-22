@@ -10,6 +10,8 @@ import { TAXON_CONFIG, getTaxonEmoji } from '../../Map/layers/taxonConfig';
 import { useINaturalistFilter } from '../../../context/INaturalistFilterContext';
 import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { loadingTheme } from '../../shared/loading/loadingTheme';
+import { DraggableWidget } from '../shared/DraggableWidget';
+import { LegendCloseButton } from '../shared/LegendCloseButton';
 
 export function INaturalistLegendWidget() {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -27,9 +29,9 @@ export function INaturalistLegendWidget() {
   // Loading state — show shimmer while fetching
   if (!dataLoaded) {
     return (
-      <div
+      <DraggableWidget
         id="inat-legend-widget"
-        className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-72"
+        className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-legend-widget max-w-legend-fit"
       >
         <InlineLoadingRow
           id="inat-legend-loading"
@@ -38,20 +40,20 @@ export function INaturalistLegendWidget() {
           spinnerClassName="w-4 h-4 animate-spin text-gray-400"
           textClassName={loadingTheme.inlineText}
         />
-      </div>
+      </DraggableWidget>
     );
   }
 
   if (groups.length === 0) return null;
 
   return (
-    <div
+    <DraggableWidget
       id="inat-legend-widget"
-      className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-72"
+      className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-legend-widget max-w-legend-fit"
     >
       {/* Header — click anywhere to expand/collapse; caret at far right */}
       <div
-        id="inat-legend-header"
+        id="inat-legend-header" data-drag-handle
         role="button"
         tabIndex={0}
         onClick={() => setIsExpanded(!isExpanded)}
@@ -103,6 +105,7 @@ export function INaturalistLegendWidget() {
               ? <ChevronDown className="w-4 h-4 text-gray-600" />
               : <ChevronRight className="w-4 h-4 text-gray-600" />}
           </button>
+          <LegendCloseButton id="inat-legend-close-button" />
         </div>
       </div>
 
@@ -142,6 +145,6 @@ export function INaturalistLegendWidget() {
           </div>
         </div>
       </div>
-    </div>
+    </DraggableWidget>
   );
 }

@@ -263,7 +263,10 @@ export function LayerRow({
         )}
 
         <span className="min-w-0 flex-1 flex flex-col gap-0.5 overflow-hidden">
-          <span className={`truncate ${textColor} ${isActive ? 'font-semibold' : ''}`}>
+          <span
+            title={isInactiveMeasure ? undefined : name}
+            className={`break-words leading-snug line-clamp-2 ${textColor} ${isActive ? 'font-semibold' : ''}`}
+          >
             {renderHighlightedText(name, highlightQuery)}
           </span>
           {isLiveMeasure && (
@@ -382,7 +385,7 @@ export function LayerRow({
                         className={`w-full flex items-center gap-1.5 px-2 py-1.5 text-left transition-colors
                           ${isSelectedProject ? 'bg-amber-100 text-gray-900' : 'hover:bg-slate-100 text-gray-800'}`}
                       >
-                        <span className="text-xs text-gray-800 truncate flex-1">
+                        <span className="text-xs text-gray-800 break-words leading-snug line-clamp-2 min-w-0 flex-1" title={project.projectName}>
                           {project.projectName}
                         </span>
                         <span className="text-[10px] text-gray-600 rounded-full bg-white px-1.5 py-0.5 border border-gray-200">

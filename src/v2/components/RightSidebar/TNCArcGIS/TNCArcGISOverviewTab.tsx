@@ -13,6 +13,7 @@ import {
   OverviewSourceOverlay,
   ServiceLayerListSection,
 } from './TNCArcGISOverviewSections';
+import { OverviewLegendSection } from './OverviewLegendSection';
 
 type LayerKind = 'feature' | 'map-image' | 'imagery' | null;
 type SourceIframeStatus = 'idle' | 'loading' | 'ready' | 'blocked';
@@ -229,6 +230,8 @@ export function TNCArcGISOverviewTab({
             }}
           />
         )}
+
+        {targetLayer && <OverviewLegendSection targetLayer={targetLayer} />}
       </div>
 
       <div className="sticky bottom-0 z-10 -mx-4 mt-5 border-t border-gray-200 bg-white px-4 pt-3">

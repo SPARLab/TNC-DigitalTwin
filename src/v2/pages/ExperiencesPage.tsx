@@ -35,17 +35,16 @@ function ExperienceCard({
   onSelect: (id: string) => void;
 }) {
   const Icon = experience.icon;
+  const isComingSoon = experience.comingSoon;
+  const cardClassName = `group relative flex flex-col overflow-hidden rounded-card border border-gray-200 bg-white text-left text-gray-900 transition-all ${
+    isComingSoon
+      ? 'cursor-not-allowed opacity-70'
+      : 'hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-lg'
+  }`;
 
-  return (
-    <button
-      id={`experience-card-${experience.id}`}
-      type="button"
-      onClick={() => onSelect(experience.id)}
-      className={`group relative flex flex-col overflow-hidden rounded-card border border-gray-200 bg-white text-left text-gray-900 transition-all hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-lg ${
-        experience.comingSoon ? 'opacity-75 hover:opacity-100' : ''
-      }`}
-    >
-      {experience.comingSoon && (
+  const content = (
+    <>
+      {isComingSoon && (
         <span className="absolute right-2.5 top-2 z-10 rounded bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-700">
           Coming Soon
         </span>
@@ -55,7 +54,9 @@ function ExperienceCard({
         <img
           src={experience.image}
           alt=""
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className={`h-full w-full object-cover transition-transform duration-300 ${
+            isComingSoon ? 'grayscale' : 'group-hover:scale-105'
+          }`}
         />
         <div className="absolute inset-0 flex items-end justify-end bg-gradient-to-b from-black/5 to-black/40 p-2.5 text-white/70">
           <Icon className="h-7 w-7" />
@@ -78,6 +79,32 @@ function ExperienceCard({
           )}
         </div>
       </div>
+    </>
+  );
+
+  // Coming-soon experiences render as inert cards: no button, no click handler,
+  // and no route is ever generated for them.
+  if (isComingSoon) {
+    return (
+      <div
+        id={`experience-card-${experience.id}`}
+        aria-disabled="true"
+        title={`${experience.name} is coming soon`}
+        className={cardClassName}
+      >
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      id={`experience-card-${experience.id}`}
+      type="button"
+      onClick={() => onSelect(experience.id)}
+      className={cardClassName}
+    >
+      {content}
     </button>
   );
 }
@@ -251,7 +278,10 @@ export function ExperiencesPage() {
   const workspaceMatch = useMatch('/experiences/:experienceId');
   const experienceId = workspaceMatch?.params.experienceId;
   const navigate = useNavigate();
-  const experience = experienceId ? getExperienceById(experienceId) : undefined;
+  const registered = experienceId ? getExperienceById(experienceId) : null;
+  // Coming-soon experiences have no workspace route: a typed/stale URL for one
+  // is treated like an unknown id and redirected back to the gallery.
+  const experience = registered && !registered.comingSoon ? registered : undefined;
 
   if (FEEDBACK_PREVIEW_MODE) {
     return (

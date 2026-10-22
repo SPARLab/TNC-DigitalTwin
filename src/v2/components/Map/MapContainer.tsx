@@ -8,6 +8,7 @@
 import { useRef } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { MapLayersWidget } from '../FloatingWidgets/MapLayersWidget/MapLayersWidget';
+import { useLegendHidden } from '../FloatingWidgets/shared/legendVisibilityStore';
 import { MapControlRail } from './MapControlRail';
 import { useMap } from '../../context/MapContext';
 import { useLayers } from '../../context/LayerContext';
@@ -40,6 +41,8 @@ export function MapContainer() {
   // Adapter lookup supports layer-specific overrides (for example, DroneDeploy dataset-193).
   const adapter = getAdapterForActiveLayer(activeLayer ?? null);
   const LegendWidget = adapter?.LegendWidget;
+  // The legend's X hides it; the map control rail offers a button to bring it back.
+  const legendHidden = useLegendHidden();
   const FloatingPanel = adapter?.FloatingPanel;
 
   // Cache/loading status for the active data source
@@ -169,7 +172,12 @@ export function MapContainer() {
       <MapLayersWidget />
 
       {/* Legend widget — only for the ACTIVE layer's data source */}
-      {LegendWidget && <LegendWidget />}
+      {/* Kept mounted while closed so its state (e.g. legend filter picks) survives a re-open. */}
+      {LegendWidget && (
+        <div id="map-legend-slot" className={legendHidden ? 'hidden' : 'contents'}>
+          <LegendWidget />
+        </div>
+      )}
 
       {/* Floating panel — data source specific (e.g., Dendra time series chart) */}
       {FloatingPanel && <FloatingPanel />}

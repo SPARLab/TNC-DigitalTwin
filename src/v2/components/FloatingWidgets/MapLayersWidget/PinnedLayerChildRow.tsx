@@ -175,7 +175,7 @@ export function PinnedLayerChildRow({
                 autoFocus
               />
             ) : (
-              <span className="text-sm block truncate text-gray-800">
+              <span className="text-sm block break-words leading-snug line-clamp-2 text-gray-800" title={displayLabel}>
                 {displayLabel}
               </span>
             )}

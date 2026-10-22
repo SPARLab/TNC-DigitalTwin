@@ -3,20 +3,24 @@
 // Camera traps now use a single map symbol, so this stays intentionally minimal.
 // ============================================================================
 
+import { DraggableWidget } from '../shared/DraggableWidget';
+import { LegendCloseButton } from '../shared/LegendCloseButton';
+
 export function AnimlLegendWidget() {
   return (
-    <div
+    <DraggableWidget
       id="animl-legend-widget"
-      className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-72"
+      className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-legend-widget max-w-legend-fit"
       aria-label="Camera trap map legend"
     >
       <div
-        id="animl-legend-header"
+        id="animl-legend-header" data-drag-handle
         className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200 rounded-t-lg"
       >
         <h3 id="animl-legend-title" className="text-sm font-semibold text-gray-900">
           Camera Traps
         </h3>
+        <LegendCloseButton id="animl-legend-close-button" />
       </div>
 
       <div id="animl-legend-content" className="p-2 rounded-b-lg">
@@ -39,6 +43,6 @@ export function AnimlLegendWidget() {
           </span>
         </div>
       </div>
-    </div>
+    </DraggableWidget>
   );
 }
