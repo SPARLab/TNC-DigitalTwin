@@ -121,8 +121,8 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     id: 'creek-water-visualization',
     name: 'Creek Water Visualization',
     description:
-      'Watch observed and modeled water rise and fall along Jalama Creek in a ' +
-      '3D terrain scene, driven by USGS gauge readings and modeled water-surface elevations.',
+      'Watch Jalama Creek rise and fall in 3D terrain, from USGS gauge ' +
+      'measurements and modeled estimates that illustrate approximate conditions.',
     icon: Waves,
     categoryId: 'water',
     kind: 'model',
