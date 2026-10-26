@@ -18,6 +18,10 @@ import type {
   CatalogRaster,
   GpMessage,
   OccurrenceFeature,
+  RunDownload,
+  SdmCommonAreas,
+  SdmComparison,
+  SdmSummary,
   SuitabilityRunAnalysis,
 } from '../components/Experiences/types';
 import { bioclimMosaicTag } from './mosaicSelection';
@@ -393,11 +397,17 @@ export async function fetchGpRunAnalysis(
  * PNG the map service actually writes. Requesting format=tiff on this service
  * still returns a .png href, so that response is never offered as a TIFF.
  */
-export async function fetchGpJobPngUrl(
+/**
+ * Map service export for a job's output. `f=json` answers with a link to a temporary
+ * image; `f=image` answers with the image itself, which is the one to save later
+ * because the temporary file is cleaned up by the server.
+ */
+export function gpJobExportUrl(
   mapServerUrl: string,
   jobId: string,
   extent: GpMapExtent,
-): Promise<string | null> {
+  format: 'json' | 'image' = 'json',
+): string {
   const sr = extent.spatialReference?.latestWkid ?? extent.spatialReference?.wkid ?? 32611;
   const params = new URLSearchParams({
     bbox: [extent.xmin, extent.ymin, extent.xmax, extent.ymax].join(','),
@@ -406,27 +416,108 @@ export async function fetchGpJobPngUrl(
     size: '1024,1024',
     format: 'png',
     transparent: 'true',
-    f: 'json',
+    f: format,
   });
-  const response = await fetch(`${mapServerUrl}/jobs/${jobId}/export?${params.toString()}`);
+  return `${mapServerUrl}/jobs/${jobId}/export?${params.toString()}`;
+}
+
+export async function fetchGpJobPngUrl(
+  mapServerUrl: string,
+  jobId: string,
+  extent: GpMapExtent,
+): Promise<string | null> {
+  const response = await fetch(gpJobExportUrl(mapServerUrl, jobId, extent));
   const data = await response.json();
   return typeof data?.href === 'string' && data.href.startsWith('http') ? data.href : null;
 }
 
 const PUBLIC_TIFF = /Public TIFF:\s*(\S+)/i;
 
+function publicTiffUrl(value: string): string | null {
+  const url = /^https?:\/\//i.test(value)
+    ? value
+    : `${ARCGIS_SERVER_URL}/rest/directories/${value.replace(/^\/+/, '')}`;
+  return /\.tiff?($|\?)/i.test(url) ? url : null;
+}
+
 /** GeoTIFF copied into arcgisoutput by the suitability tool. */
 export function tiffUrlFromMessages(messages: GpMessage[]): string | null {
   for (const message of [...messages].reverse()) {
     const match = message.description?.match(PUBLIC_TIFF);
     if (!match) continue;
-    const value = match[1].trim();
-    const url = /^https?:\/\//i.test(value)
-      ? value
-      : `${ARCGIS_SERVER_URL}/rest/directories/${value.replace(/^\/+/, '')}`;
-    if (/\.tiff?($|\?)/i.test(url)) return url;
+    const url = publicTiffUrl(match[1].trim());
+    if (url) return url;
   }
   return null;
+}
+
+/** Plain labels for the file suffixes the SDM tools publish ("<jobId>_<suffix>.tif"). */
+const SDM_TIFF_LABELS: Record<string, string> = {
+  sdm_result: 'Habitat suitability',
+  sdm_difference: 'Difference (B − A)',
+  sdm_threshold_change: 'Threshold change',
+  sdm_common_count: 'Runs suitable (count)',
+  sdm_common: 'Suitable in every run',
+};
+
+/** Every GeoTIFF a job published, in the order it announced them. */
+export function tiffDownloadsFromMessages(messages: GpMessage[]): RunDownload[] {
+  const downloads: RunDownload[] = [];
+  const seen = new Set<string>();
+  for (const message of messages) {
+    const match = message.description?.match(PUBLIC_TIFF);
+    if (!match) continue;
+    const url = publicTiffUrl(match[1].trim());
+    if (!url || seen.has(url)) continue;
+    seen.add(url);
+    const suffix = url.match(/_(sdm_[a-z_]+)\.tiff?/i)?.[1]?.toLowerCase();
+    downloads.push({ label: (suffix && SDM_TIFF_LABELS[suffix]) || 'GeoTIFF', url });
+  }
+  return downloads;
+}
+
+/** Name of the JSON output every SDM tool writes. */
+export const SDM_SUMMARY_PARAM = 'summary_json';
+
+/**
+ * Accept a tool's JSON output as a string or an already parsed object. Returns
+ * null unless it is an object whose `type` is the expected one.
+ */
+function parseTypedJson<T extends { type: string }>(value: unknown, type: T['type']): T | null {
+  let parsed: unknown = value;
+  if (typeof value === 'string') {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      return null;
+    }
+  }
+  if (!parsed || typeof parsed !== 'object') return null;
+  return (parsed as { type?: unknown }).type === type ? (parsed as T) : null;
+}
+
+export const parseSdmSummary = (value: unknown) => parseTypedJson<SdmSummary>(value, 'sdm_summary');
+export const parseSdmComparison = (value: unknown) =>
+  parseTypedJson<SdmComparison>(value, 'sdm_comparison');
+export const parseSdmCommonAreas = (value: unknown) =>
+  parseTypedJson<SdmCommonAreas>(value, 'sdm_common_suitability');
+
+/** One output parameter of a finished job (a JSON string, object, or raster descriptor). */
+export async function fetchGpResultValue(
+  serviceUrl: string,
+  task: string,
+  jobId: string,
+  paramName: string,
+  token: string | null,
+): Promise<unknown> {
+  const params = new URLSearchParams({ f: 'json' });
+  appendToken(params, token);
+  const response = await fetch(
+    `${serviceUrl}/${encodeURIComponent(task)}/jobs/${jobId}/results/${encodeURIComponent(paramName)}?${params.toString()}`,
+  );
+  const data = await response.json().catch(() => null);
+  if (!data || data.error) return null;
+  return data.value ?? null;
 }
 
 export function parseJobFilename(

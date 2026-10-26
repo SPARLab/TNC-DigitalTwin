@@ -1,3 +1,5 @@
+import { GBIF_PRESERVE_LAYER_URL } from './gbifEndpoints';
+
 export interface GBIFOccurrence {
   id: number;
   gbifKey: string | null;
@@ -55,8 +57,7 @@ export interface GBIFQueryResponse {
   totalCount: number;
 }
 
-const BASE_URL =
-  'https://dangermondpreserve-spatial.com/server/rest/services/Hosted/GBIF_Hosted/FeatureServer/0';
+const BASE_URL = GBIF_PRESERVE_LAYER_URL;
 const GBIF_API_BASE_URL = 'https://api.gbif.org/v1';
 
 const SEARCH_FIELDS = ['scientific_name', 'species', 'genus', 'family', 'dataset_name', 'recorded_by'];

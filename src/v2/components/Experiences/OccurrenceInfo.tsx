@@ -11,12 +11,18 @@ import type { OccurrenceFeature, PointsAction } from './types';
 interface OccurrenceInfoProps {
   species: string;
   onTogglePoints?: (action: PointsAction) => void;
+  /**
+   * Whether this species' records are on the map. Given when the map can also
+   * add them itself (a finished model run does), so the button stays right.
+   */
+  isOnMap?: boolean;
 }
 
-export function OccurrenceInfo({ species, onTogglePoints }: OccurrenceInfoProps) {
+export function OccurrenceInfo({ species, onTogglePoints, isOnMap }: OccurrenceInfoProps) {
   const [features, setFeatures] = useState<OccurrenceFeature[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [arePointsVisible, setArePointsVisible] = useState(false);
+  const [localVisible, setArePointsVisible] = useState(false);
+  const arePointsVisible = isOnMap ?? localVisible;
   const previousSpeciesRef = useRef<string | null>(null);
 
   useEffect(() => {

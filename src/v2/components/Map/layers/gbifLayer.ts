@@ -6,9 +6,9 @@
 import type Layer from '@arcgis/core/layers/Layer';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import type { GBIFAggregationMode } from '../../../context/GBIFFilterContext';
+import { GBIF_PRESERVE_LAYER_URL } from '../../../../services/gbifEndpoints';
 
-const GBIF_FEATURE_SERVER_URL =
-  'https://dangermondpreserve-spatial.com/server/rest/services/Hosted/GBIF_Hosted/FeatureServer/0';
+const GBIF_FEATURE_SERVER_URL = GBIF_PRESERVE_LAYER_URL;
 
 /**
  * Keep map payload minimal for faster cluster rendering.

@@ -295,7 +295,8 @@ Implement the GBIF (Global Biodiversity Information Facility) species occurrence
 > Fill this out during Task 9.1
 
 ### Data Source (Task 9.1)
-- **Active endpoint (Feb 2026):** `https://dangermondpreserve-spatial.com/server/rest/services/Hosted/GBIF_Hosted/FeatureServer/0` — `dataset-215` (GBIF Hosted)
+- **Active endpoint (Oct 2026):** `https://dangermondpreserve-spatial.com/server/rest/services/Tricounty_Species_Occurrences/FeatureServer/1` (layer "GBIF Preserve Occurrences", a live query layer over `gbif.occurrences_preserve_snapshot`, rebuilt after every monthly load). Layer 2 is the "Species Common Names" table used by the SDM species picker. URLs live in `src/services/gbifEndpoints.ts`.
+- Previous (Feb 2026, frozen at the April 2026 data, no longer updated): `Hosted/GBIF_Hosted/FeatureServer/0` — `dataset-215` (GBIF Hosted)
 - Legacy (failing): `Dangermond_Preserve_Species_Occurrences/FeatureServer/0` — `dataset-178`
 - GBIF API endpoint: `https://api.gbif.org/v1/occurrence/search`
 - Data Catalog mapping: `dataset-215` (GBIF Hosted), `dataset-178` (legacy)
@@ -370,5 +371,6 @@ Record-level overlap with iNaturalist is still unquantified in this phase implem
 | Feb 19, 2026 | 9.5 | GBIF API media fallback: fetch occurrence media when ArcGIS lacks primary_image_url; hero + thumbnail strip in detail view | Cursor |
 | Feb 20, 2026 | D20-08 | Removed empty classes filter; GBIF browse resilient to count/distinct failures | Cursor |
 | Feb 20, 2026 | GBIF-HOSTED | Switched GBIF service + map to `Hosted/GBIF_Hosted` (dataset-215); adapter supports dataset-178 and dataset-215 | Cursor |
+| Oct 22, 2026 | GBIF-LIVE | Map + browse now read `Tricounty_Species_Occurrences/FeatureServer/1` (live, monthly refresh, quality-filtered, PRESENT only) instead of the frozen `Hosted/GBIF_Hosted`; SDM species picker now searches the `Species Common Names` table (layer 2) with Animals/Plants/Fungi filter and common names | Cursor |
 | Feb 20, 2026 | P9-GRIDBIN | Added high-priority task: grid bin native ArcGIS strategy; blocked on DataOne merge | User |
 | Feb 20, 2026 | D20-12 | In progress: media_json parsing, card/detail wiring, overlay scrollbar, dev debug panel. ~2.8k/323k rows have media; coworker may populate more. Optional follow-up: "Has media only" filter | Cursor |

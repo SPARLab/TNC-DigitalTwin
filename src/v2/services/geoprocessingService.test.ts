@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { parseRunAnalysis, pickRasterDisplayTitle } from './geoprocessingService';
+import {
+  parseRunAnalysis,
+  parseSdmCommonAreas,
+  parseSdmComparison,
+  parseSdmSummary,
+  pickRasterDisplayTitle,
+  tiffDownloadsFromMessages,
+} from './geoprocessingService';
 
 describe('pickRasterDisplayTitle', () => {
   it('prefers curated layer_name over service-style raster titles', () => {
@@ -71,5 +78,47 @@ describe('parseRunAnalysis', () => {
     expect(parseRunAnalysis(null)).toBeNull();
     expect(parseRunAnalysis(JSON.stringify({ ...analysis, type: 'suitability_summary' }))).toBeNull();
     expect(parseRunAnalysis(JSON.stringify({ type: 'suitability_run_analysis' }))).toBeNull();
+  });
+});
+describe('SDM tool JSON', () => {
+  const summary = { type: 'sdm_summary', run: 'Taxidea taxus', output_type: 'Binary' };
+  const comparison = { type: 'sdm_comparison', output_type: 'Probability' };
+  const common = { type: 'sdm_common_suitability', output_type: 'Binary' };
+
+  it('reads an object (as the server returns it) or a JSON string', () => {
+    expect(parseSdmSummary(summary)?.run).toBe('Taxidea taxus');
+    expect(parseSdmSummary(JSON.stringify(summary))?.output_type).toBe('Binary');
+    expect(parseSdmComparison(comparison)?.output_type).toBe('Probability');
+    expect(parseSdmCommonAreas(JSON.stringify(common))?.output_type).toBe('Binary');
+  });
+
+  it('rejects the wrong tool, bad text and empty values', () => {
+    expect(parseSdmSummary(comparison)).toBeNull();
+    expect(parseSdmComparison(common)).toBeNull();
+    expect(parseSdmCommonAreas(summary)).toBeNull();
+    expect(parseSdmSummary('not json')).toBeNull();
+    expect(parseSdmSummary(null)).toBeNull();
+    expect(parseSdmSummary(7)).toBeNull();
+  });
+});
+
+describe('tiffDownloadsFromMessages', () => {
+  const message = (description: string) => ({ type: 'esriJobMessageTypeInformative', description });
+
+  it('lists every published GeoTIFF with a plain label', () => {
+    const downloads = tiffDownloadsFromMessages([
+      message('Comparing a (A) with b (B)'),
+      message('Public TIFF: arcgisoutput/SDM_Random_Forest_GPServer/j1_sdm_difference.tif'),
+      message('Public TIFF: arcgisoutput/SDM_Random_Forest_GPServer/j1_sdm_threshold_change.tif'),
+    ]);
+    expect(downloads.map((item) => item.label)).toEqual(['Difference (B − A)', 'Threshold change']);
+    expect(downloads[0].url).toMatch(/^https:\/\/.+\/rest\/directories\/arcgisoutput\/.+j1_sdm_difference\.tif$/);
+  });
+
+  it('skips repeats and anything that is not a TIFF', () => {
+    const line = 'Public TIFF: arcgisoutput/SDM_Random_Forest_GPServer/j1_sdm_result.tif';
+    expect(tiffDownloadsFromMessages([message(line), message(line)])).toHaveLength(1);
+    expect(tiffDownloadsFromMessages([message('Public TIFF: arcgisoutput/x/j1.png')])).toEqual([]);
+    expect(tiffDownloadsFromMessages([])).toEqual([]);
   });
 });

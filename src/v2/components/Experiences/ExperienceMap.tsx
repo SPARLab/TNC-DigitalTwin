@@ -6,7 +6,7 @@
 // can be toggled without the catalog layer widget.
 // ============================================================================
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ArcGISMap from '@arcgis/core/Map';
 import MapView from '@arcgis/core/views/MapView';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
@@ -15,6 +15,7 @@ import ImageryLayer from '@arcgis/core/layers/ImageryLayer';
 import ImageryTileLayer from '@arcgis/core/layers/ImageryTileLayer';
 import MapImageLayer from '@arcgis/core/layers/MapImageLayer';
 import Graphic from '@arcgis/core/Graphic';
+import * as reactiveUtils from '@arcgis/core/core/reactiveUtils';
 import LayerList from '@arcgis/core/widgets/LayerList';
 import RasterColormapRenderer from '@arcgis/core/renderers/RasterColormapRenderer';
 import RasterStretchRenderer from '@arcgis/core/renderers/RasterStretchRenderer';
@@ -33,6 +34,22 @@ import {
   suitabilityRampColors,
 } from './suitabilityRamp';
 import { isTiledImageServerUrl } from '../Map/layers/tncArcgisLayer';
+import { runDisplayTitle, runKind, runLegendTitle } from './sdmRuns';
+import { SdmDerivedLegend } from './sdm/SdmLegends';
+import { hexToRgba, speciesColorFor } from './sdm/speciesColors';
+import {
+  ensureGroup,
+  findLayer,
+  layersWithIdPrefix,
+  RESULT_LAYER_PREFIX,
+  pruneEmptyGroups,
+  readLayerVisibility,
+  removeLayer,
+  resultLayerIds,
+  resultTargets,
+  speciesGroupId,
+  visibilityKey,
+} from './sdm/layerGroups';
 import { createPreserveOutlineLayer } from '../Monitoring/internal/boundaryOutlineLayer';
 import {
   ANALYSIS_EXTENT_BOUNDARIES,
@@ -46,10 +63,25 @@ interface ExperienceMapProps {
   zoom: number;
   token: string | null;
   resultLayers: CompletedRun[];
-  pointsAction: PointsAction | null;
-  previewAction: PreviewAction | null;
+  /**
+   * Every change to the species records so far, oldest first. The map applies
+   * the ones it has not seen yet.
+   */
+  pointsActions: PointsAction[];
+  /**
+   * Every preview change so far, oldest first. The map applies the ones it has
+   * not seen yet, so several changes made in one step are all applied.
+   */
+  previewActions: PreviewAction[];
   /** When set, show that catalog boundary and fit the map to it. */
   analysisExtent?: RasterScope;
+  /**
+   * Called when a run's layer is switched on or off in the layer list, so the
+   * run's own "On map" state follows the map.
+   */
+  onResultVisibilityChange?: (jobId: string, visible: boolean) => void;
+  /** Each species' record color, so the map and the panels agree. */
+  speciesColors?: Record<string, string>;
 }
 
 function requireMap(view: MapView): ArcGISMap {
@@ -62,6 +94,16 @@ function requireMap(view: MapView): ArcGISMap {
 
 function findChildLayer(group: GroupLayer, title: string) {
   return group.layers.find((layer) => layer.title === title) ?? null;
+}
+
+const PREVIEW_LAYER_PREFIX = 'experience-preview-';
+const OCCURRENCE_LAYER_PREFIX = 'sdm-occurrences-';
+
+interface OccurrenceLegend {
+  id: string;
+  speciesKey: string;
+  color: string;
+  count: number;
 }
 
 interface ResultLegendSwatch {
@@ -104,27 +146,30 @@ function colormapRenderer(swatches: ClassSwatch[]): RasterColormapRenderer {
  * If no sublayer matches (older services publish just the data raster), every
  * sublayer is left as the service defines it.
  */
-function showSuitabilityDisplaySublayer(layer: MapImageLayer): void {
+function showSuitabilityDisplaySublayer(
+  layer: MapImageLayer,
+  pattern: RegExp = SUITABILITY_DISPLAY_SUBLAYER_TITLE,
+): void {
   const sublayers = layer.sublayers?.toArray() ?? [];
-  const display = sublayers.filter((sublayer) =>
-    SUITABILITY_DISPLAY_SUBLAYER_TITLE.test(sublayer.title ?? ''),
-  );
+  const display = sublayers.filter((sublayer) => pattern.test(sublayer.title ?? ''));
   if (display.length === 0) return;
   for (const sublayer of sublayers) {
     sublayer.visible = display.includes(sublayer);
   }
 }
 
-function getOrCreateGroup(view: MapView, title: string): GroupLayer {
-  const map = requireMap(view);
-  const existing = map.layers.find(
-    (layer) => layer.type === 'group' && layer.title === title,
-  ) as GroupLayer | undefined;
-  if (existing) return existing;
-
-  const group = new GroupLayer({ title, visibilityMode: 'independent' });
-  map.add(group);
-  return group;
+/**
+ * Which colored sublayer a run draws. A comparison has two (the difference and
+ * the threshold change) and shows the one chosen in the runs panel; every other
+ * run has a single display raster.
+ */
+function displaySublayerPattern(run: CompletedRun): RegExp {
+  const kind = runKind(run);
+  if (kind === 'comparison') {
+    return run.view === 'threshold-change' ? /threshold change display/i : /difference display/i;
+  }
+  if (kind === 'common') return /count display/i;
+  return SUITABILITY_DISPLAY_SUBLAYER_TITLE;
 }
 
 export function ExperienceMap({
@@ -132,20 +177,33 @@ export function ExperienceMap({
   zoom,
   token,
   resultLayers,
-  pointsAction,
-  previewAction,
+  pointsActions,
+  previewActions,
   analysisExtent,
+  onResultVisibilityChange,
+  speciesColors = {},
 }: ExperienceMapProps) {
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const layerListHostRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<MapView | null>(null);
   const previewLayersRef = useRef(new Map<string, ImageryLayer | ImageryTileLayer>());
   const stretchedPreviewIdsRef = useRef(new Set<string>());
+  const appliedPreviewCountRef = useRef(0);
+  const appliedPointsCountRef = useRef(0);
+  const speciesColorsRef = useRef(new Map<string, number>());
+  const [occurrences, setOccurrences] = useState<OccurrenceLegend[]>([]);
   const tokenRegisteredRef = useRef(false);
   const managesAnalysisExtentRef = useRef(analysisExtent != null);
   const [isReady, setIsReady] = useState(false);
   const [previews, setPreviews] = useState<ActivePreview[]>([]);
   const [resultLegends, setResultLegends] = useState<ResultLegend[]>([]);
+  // Ids of the layers showing on the map, so the legend lists only those.
+  const [showingKey, setShowingKey] = useState('');
+  const refreshVisibilityRef = useRef<() => void>(() => {});
+  const resultLayersRef = useRef(resultLayers);
+  resultLayersRef.current = resultLayers;
+  const onVisibilityChangeRef = useRef(onResultVisibilityChange);
+  onVisibilityChangeRef.current = onResultVisibilityChange;
 
   useEffect(() => {
     if (token && !tokenRegisteredRef.current) {
@@ -239,54 +297,65 @@ export function ExperienceMap({
     if (!view || !isReady) return;
 
     const map = requireMap(view);
-    const prefix = 'suitability-result-';
-    const wanted = new Map(resultLayers.map((run) => [`${prefix}${run.jobId}`, run]));
+    const prefix = RESULT_LAYER_PREFIX;
+    const wanted = new Set(resultLayers.flatMap(resultLayerIds));
 
-    map.layers
-      .filter((layer) => layer.id?.startsWith(prefix) && !wanted.has(layer.id))
-      .forEach((layer) => map.remove(layer));
+    layersWithIdPrefix(map, prefix)
+      .filter((layer) => !wanted.has(layer.id))
+      .forEach((layer) => removeLayer(map, layer));
 
     let cancelled = false;
     for (const run of resultLayers) {
-      const id = `${prefix}${run.jobId}`;
-      const existing = map.layers.find((layer) => layer.id === id);
-      if (existing) {
-        existing.visible = run.visible;
-        existing.title = run.title;
-        if (existing instanceof MapImageLayer) {
-          void existing.load().then(() => {
-            existing.sublayers?.forEach((sublayer) => {
-              sublayer.listMode = 'hide';
+      for (const { id, parent, shared, primary } of resultTargets(map, run)) {
+        // Inside its species group the species is the heading, so a run is named
+        // by what sets it apart. On its own it keeps the full name.
+        const name = parent === map ? runLegendTitle(run) : runDisplayTitle(run);
+        const title = shared ? `${name} · shared` : name;
+        // A result listed under several species is drawn once. The other
+        // entries stay clear so the same cells are not painted twice.
+        const opacity = primary ? 0.75 : 0;
+        const existing = findLayer(map, id);
+        if (existing) {
+          existing.visible = run.visible;
+          existing.title = title;
+          existing.opacity = opacity;
+          if (existing instanceof MapImageLayer) {
+            void existing.load().then(() => {
+              existing.sublayers?.forEach((sublayer) => {
+                sublayer.listMode = 'hide';
+              });
+              showSuitabilityDisplaySublayer(existing, displaySublayerPattern(run));
+            }).catch(() => {
+              // Keep the layer-list row even if the result map image is unavailable.
             });
-            showSuitabilityDisplaySublayer(existing);
-          }).catch(() => {
-            // Keep the layer-list row even if the result map image is unavailable.
-          });
+          }
+          continue;
         }
-        continue;
-      }
-      const layer = new MapImageLayer({
-        id,
-        url: `${run.mapServerUrl}/jobs/${run.jobId}`,
-        title: run.title,
-        opacity: 0.75,
-        visible: run.visible,
-        imageFormat: 'png32',
-      });
-      map.add(layer);
-      layer.load().then(() => {
-        layer.sublayers?.forEach((sublayer) => {
-          sublayer.listMode = 'hide';
+        const layer = new MapImageLayer({
+          id,
+          url: `${run.mapServerUrl}/jobs/${run.jobId}`,
+          title,
+          opacity,
+          visible: run.visible,
+          imageFormat: 'png32',
         });
-        showSuitabilityDisplaySublayer(layer);
-        if (cancelled || !run.visible) return undefined;
-        const extent = layer.fullExtent;
-        if (extent) return view.goTo(extent.expand(1.2));
-        return undefined;
-      }).catch(() => {
-        // The list entry can exist while the result map service image fails.
-      });
+        parent.add(layer);
+        layer.load().then(() => {
+          layer.sublayers?.forEach((sublayer) => {
+            sublayer.listMode = 'hide';
+          });
+          showSuitabilityDisplaySublayer(layer, displaySublayerPattern(run));
+          if (cancelled || !run.visible || !primary) return undefined;
+          const extent = layer.fullExtent;
+          if (extent) return view.goTo(extent.expand(1.2));
+          return undefined;
+        }).catch(() => {
+          // The list entry can exist while the result map service image fails.
+        });
+      }
     }
+    pruneEmptyGroups(map);
+    refreshVisibilityRef.current();
     return () => {
       cancelled = true;
     };
@@ -302,12 +371,12 @@ export function ExperienceMap({
     Promise.all(runs.map(async (run): Promise<ResultLegend> => {
       // Suitability and SDM results are color-table rasters, so the service
       // legend would list every color level. They get a ramp or classes instead.
-      if (run.record || run.outputType) {
-        return { jobId: run.jobId, title: run.title, swatches: [] };
+      if (run.record || run.outputType || run.kind) {
+        return { jobId: run.jobId, title: runLegendTitle(run), swatches: [] };
       }
       try {
         const response = await fetch(`${run.mapServerUrl}/jobs/${run.jobId}/legend?f=json`);
-        if (!response.ok) return { jobId: run.jobId, title: run.title, swatches: [] };
+        if (!response.ok) return { jobId: run.jobId, title: runLegendTitle(run), swatches: [] };
         const payload = await response.json() as {
           layers?: Array<{
             legend?: Array<{ label?: string; imageData?: string; contentType?: string }>;
@@ -323,9 +392,9 @@ export function ExperienceMap({
             }];
           }),
         );
-        return { jobId: run.jobId, title: run.title, swatches };
+        return { jobId: run.jobId, title: runLegendTitle(run), swatches };
       } catch {
-        return { jobId: run.jobId, title: run.title, swatches: [] };
+        return { jobId: run.jobId, title: runLegendTitle(run), swatches: [] };
       }
     })).then((legends) => {
       if (!cancelled) setResultLegends(legends);
@@ -335,25 +404,65 @@ export function ExperienceMap({
     };
   }, [resultLayers]);
 
+  // Follow what is switched on in the layer list, and tell the workspace when a
+  // run's own checkbox changes so "On map" and the legend stay with the map.
   useEffect(() => {
     const view = viewRef.current;
-    if (!view || !isReady || !pointsAction) return;
+    if (!view || !isReady) return undefined;
+    const map = requireMap(view);
+    const lastSwitchedOff = new Map<string, boolean>();
 
+    const refresh = () => {
+      const { showing, switchedOff } = readLayerVisibility(map);
+      setShowingKey([...showing].sort().join('\n'));
+
+      for (const run of resultLayersRef.current) {
+        // A result shared by several species has a layer under each of them.
+        for (const id of resultLayerIds(run)) {
+          if (!findLayer(map, id)) {
+            lastSwitchedOff.delete(id);
+            continue;
+          }
+          const off = switchedOff.has(id);
+          const previous = lastSwitchedOff.get(id);
+          lastSwitchedOff.set(id, off);
+          // Only a change made on the map is passed on, not the map following the run.
+          if (previous !== undefined && previous !== off && run.visible === off) {
+            onVisibilityChangeRef.current?.(run.jobId, !off);
+          }
+        }
+      }
+    };
+    refreshVisibilityRef.current = refresh;
+
+    const watchHandle = reactiveUtils.watch(() => visibilityKey(map), refresh, { initial: true });
+    const listHandle = map.allLayers.on('change', refresh);
+    return () => {
+      watchHandle.remove();
+      listHandle.remove();
+      refreshVisibilityRef.current = () => {};
+    };
+  }, [isReady]);
+
+  const applyPointsAction = (view: MapView, pointsAction: PointsAction) => {
     const childTitle = 'Occurrences';
     const map = requireMap(view);
+    const speciesKey = pointsAction.species;
 
     if (pointsAction.action === 'remove') {
-      const group = map.layers.find(
-        (layer) => layer.type === 'group' && layer.title === pointsAction.species,
-      ) as GroupLayer | undefined;
+      const group = findLayer(map, speciesGroupId(pointsAction.species)) as GroupLayer | undefined;
       if (!group) return;
       const existing = findChildLayer(group, childTitle);
       if (existing) group.remove(existing);
-      if (group.layers.length === 0) map.remove(group);
+      pruneEmptyGroups(map);
+      setOccurrences((current) => current.filter((item) => item.speciesKey !== speciesKey));
       return;
     }
 
-    const group = getOrCreateGroup(view, pointsAction.species);
+    // The species group may already hold runs, which have given it a display
+    // name. Only a new group is named after the scientific name.
+    const groupId = speciesGroupId(pointsAction.species);
+    const group = ensureGroup(map, groupId, findLayer(map, groupId) ? undefined : pointsAction.species);
     const existing = findChildLayer(group, childTitle);
     if (existing) group.remove(existing);
 
@@ -384,7 +493,11 @@ export function ExperienceMap({
 
     if (graphics.length === 0) return;
 
+    // Each species keeps its own color, so several can share the map.
+    const color = speciesColors[speciesKey] ?? speciesColorFor(speciesColorsRef.current, speciesKey);
+    const layerId = `${OCCURRENCE_LAYER_PREFIX}${speciesKey}`;
     const layer = new FeatureLayer({
+      id: layerId,
       title: childTitle,
       source: graphics,
       objectIdField: 'ObjectID',
@@ -420,7 +533,7 @@ export function ExperienceMap({
         symbol: {
           type: 'simple-marker',
           style: 'circle',
-          color: [5, 150, 105, 180],
+          color: hexToRgba(color, 0.78),
           size: 6,
           outline: { color: [255, 255, 255, 220], width: 0.75 },
         },
@@ -428,55 +541,74 @@ export function ExperienceMap({
     });
 
     group.add(layer);
-  }, [isReady, pointsAction]);
+    setOccurrences((current) => [
+      ...current.filter((item) => item.speciesKey !== speciesKey),
+      { id: layerId, speciesKey, color, count: graphics.length },
+    ]);
+    refreshVisibilityRef.current();
+  };
 
   useEffect(() => {
-    if (!previewAction?.url && previewAction?.action !== 'remove') return;
-    if (previewAction.action === 'remove') {
-      setPreviews((current) => current.filter((preview) => preview.rasterId !== previewAction.rasterId));
-      return;
-    }
-    if (!previewAction.url) return;
+    const view = viewRef.current;
+    if (!view || !isReady) return;
+    const pending = pointsActions.slice(appliedPointsCountRef.current);
+    appliedPointsCountRef.current = pointsActions.length;
+    for (const action of pending) applyPointsAction(view, action);
+  }, [isReady, pointsActions]);
 
-    const rasterId = previewAction.rasterId;
-    const url = previewAction.url;
-    const datasetId = previewAction.datasetId ?? null;
-    const mosaicTag = previewAction.mosaicTag ?? null;
-    setPreviews((current) => {
-      if (current.some((preview) => preview.rasterId === rasterId)) return current;
-      return [
-        ...current,
-        {
-          rasterId,
-          title: previewAction.title || 'Preview',
-          url,
-          datasetId,
-          mosaicTag,
-          swatches: null,
-          legendRamp: null,
-          legendLoaded: false,
-        },
-      ];
-    });
+  useEffect(() => {
+    const pending = previewActions.slice(appliedPreviewCountRef.current);
+    appliedPreviewCountRef.current = previewActions.length;
 
-    fetchRasterClassSwatches({ rasterUrl: url, datasetId, token })
-      .then((swatches) => {
+    for (const previewAction of pending) {
+      if (previewAction.action === 'remove') {
         setPreviews((current) =>
-          current.map((preview) =>
-            preview.rasterId === rasterId
-              ? { ...preview, swatches, legendLoaded: true }
-              : preview,
-          ),
+          current.filter((preview) => preview.rasterId !== previewAction.rasterId),
         );
-      })
-      .catch(() => {
-        setPreviews((current) =>
-          current.map((preview) =>
-            preview.rasterId === rasterId ? { ...preview, legendLoaded: true } : preview,
-          ),
-        );
+        continue;
+      }
+      if (!previewAction.url) continue;
+
+      const rasterId = previewAction.rasterId;
+      const url = previewAction.url;
+      const datasetId = previewAction.datasetId ?? null;
+      const mosaicTag = previewAction.mosaicTag ?? null;
+      setPreviews((current) => {
+        if (current.some((preview) => preview.rasterId === rasterId)) return current;
+        return [
+          ...current,
+          {
+            rasterId,
+            title: previewAction.title || 'Preview',
+            url,
+            datasetId,
+            mosaicTag,
+            swatches: null,
+            legendRamp: null,
+            legendLoaded: false,
+          },
+        ];
       });
-  }, [previewAction, token]);
+
+      fetchRasterClassSwatches({ rasterUrl: url, datasetId, token })
+        .then((swatches) => {
+          setPreviews((current) =>
+            current.map((preview) =>
+              preview.rasterId === rasterId
+                ? { ...preview, swatches, legendLoaded: true }
+                : preview,
+            ),
+          );
+        })
+        .catch(() => {
+          setPreviews((current) =>
+            current.map((preview) =>
+              preview.rasterId === rasterId ? { ...preview, legendLoaded: true } : preview,
+            ),
+          );
+        });
+    }
+  }, [previewActions, token]);
 
   useEffect(() => {
     const view = viewRef.current;
@@ -556,6 +688,7 @@ export function ExperienceMap({
       let layer = previewLayersRef.current.get(key);
       if (!layer) {
         const layerOptions = {
+          id: `${PREVIEW_LAYER_PREFIX}${key}`,
           url: preview.url,
           title: preview.title,
           opacity: 0.85,
@@ -628,12 +761,25 @@ export function ExperienceMap({
     }
   }, [analysisExtent, isReady, previews, token]);
 
+  // The legend lists what shows on the map: layers that are on, inside groups
+  // that are on. Switching a layer or its group off in the layer list removes it.
+  const showingIds = useMemo(() => new Set(showingKey.split('\n')), [showingKey]);
   const visibleResultLegends = resultLegends.filter((legend) => {
     const run = resultLayers.find((item) => item.jobId === legend.jobId);
     return Boolean(
-      run?.visible && (run.record || run.outputType || legend.swatches.length > 0),
+      run
+        && resultLayerIds(run).some((id) => showingIds.has(id))
+        && (run.record || run.outputType || run.kind || legend.swatches.length > 0),
     );
   });
+  const visiblePreviews = previews.filter((preview) =>
+    showingIds.has(`${PREVIEW_LAYER_PREFIX}${preview.rasterId}`),
+  );
+  const visibleOccurrences = occurrences.filter((item) => showingIds.has(item.id));
+  const occurrenceLabel = (speciesKey: string) =>
+    resultLayers.find((run) => run.speciesKey === speciesKey)?.species ?? speciesKey;
+  const showAnalysisExtentLegend = Boolean(analysisExtent)
+    && (!showingKey || showingIds.has(ANALYSIS_EXTENT_LAYER_ID));
   const suitabilityRampColorList = suitabilityRampColors();
 
   return (
@@ -666,13 +812,18 @@ export function ExperienceMap({
         bodyClassName="overflow-y-auto"
       >
         <div>
-          {previews.length === 0 && !visibleResultLegends.length && !analysisExtent && (
+          {visiblePreviews.length === 0
+            && visibleOccurrences.length === 0
+            && !visibleResultLegends.length
+            && !showAnalysisExtentLegend && (
             <p className="py-2 text-sm text-gray-500">Preview a layer to see its legend.</p>
           )}
           {visibleResultLegends.map((legend) => {
             const legendRun = resultLayers.find((item) => item.jobId === legend.jobId);
             const scaleMax = legendRun?.record?.scaleMax;
-            const sdmOutputType = legendRun?.outputType ?? null;
+            const derivedKind = legendRun ? runKind(legendRun) : null;
+            // Comparisons also record an output type, but they have their own legend.
+            const sdmOutputType = derivedKind === 'model' ? legendRun?.outputType ?? null : null;
             return (
             <section key={legend.jobId} className="mb-3 last:mb-0">
               <h4 className="mb-1.5 break-words text-sm font-semibold text-gray-900">{legend.title}</h4>
@@ -699,6 +850,9 @@ export function ExperienceMap({
                     <span>0 (low probability)</span>
                   </div>
                 </div>
+              )}
+              {legendRun && (derivedKind === 'comparison' || derivedKind === 'common') && (
+                <SdmDerivedLegend run={legendRun} kind={derivedKind} />
               )}
               {sdmOutputType === 'Binary' && (
                 <ul className="flex flex-col gap-1">
@@ -730,7 +884,23 @@ export function ExperienceMap({
             </section>
             );
           })}
-          {analysisExtent && (
+          {visibleOccurrences.map((item) => (
+            <section key={item.id} className="mb-3 last:mb-0">
+              <h4 className="mb-1.5 break-words text-sm font-semibold text-gray-900">
+                {occurrenceLabel(item.speciesKey)}
+              </h4>
+              <div className="flex items-center gap-2">
+                <span
+                  className="inline-block h-3.5 w-3.5 flex-shrink-0 rounded-full border border-white"
+                  style={{ background: item.color }}
+                />
+                <span className="text-sm text-gray-700">
+                  Occurrence records ({item.count.toLocaleString()})
+                </span>
+              </div>
+            </section>
+          ))}
+          {analysisExtent && showAnalysisExtentLegend && (
             <section className="mb-3 last:mb-0">
               <h4 className="mb-1.5 break-words text-sm font-semibold text-gray-900">
                 {ANALYSIS_EXTENT_BOUNDARIES[analysisExtent].title}
@@ -741,7 +911,7 @@ export function ExperienceMap({
               </div>
             </section>
           )}
-          {previews.map((preview) => (
+          {visiblePreviews.map((preview) => (
             <section key={preview.rasterId} className="mb-3 last:mb-0">
               <h4 className="mb-1.5 break-words text-sm font-semibold text-gray-900">{preview.title}</h4>
               {preview.swatches?.length ? (

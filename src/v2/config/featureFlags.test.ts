@@ -26,8 +26,8 @@ describe('production hiding', () => {
 });
 
 describe('experience tags', () => {
-  it('marks the Species Distribution Model as coming soon but not the Suitability Modeler', () => {
-    expect(getExperienceById('sdm')?.comingSoon).toBe(true);
+  it('does not mark the Species Distribution Model or Suitability Modeler as coming soon', () => {
+    expect(getExperienceById('sdm')?.comingSoon).toBe(false);
     expect(getExperienceById('suitability')?.comingSoon).toBe(false);
   });
 });

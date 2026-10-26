@@ -111,7 +111,7 @@ describe('V2AppRoutes', () => {
     const user = userEvent.setup();
     renderAt('/experiences');
 
-    const soon = document.getElementById('experience-card-sdm');
+    const soon = document.getElementById('experience-card-ice-plant-control');
     expect(soon).not.toBeNull();
     expect(soon?.tagName).not.toBe('BUTTON');
     expect(soon).toHaveAttribute('aria-disabled', 'true');
@@ -122,7 +122,7 @@ describe('V2AppRoutes', () => {
   });
 
   it('redirects a coming-soon experience URL back to the gallery', () => {
-    renderAt('/experiences/sdm');
+    renderAt('/experiences/ice-plant-control');
 
     expect(screen.queryByText('Experience Map')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Experiences' })).toBeInTheDocument();

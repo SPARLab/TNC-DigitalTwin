@@ -1,0 +1,151 @@
+{
+ "type": "sdm_common_suitability",
+ "output_type": "Probability",
+ "runs": [
+  {
+   "run": "je5a3a0eb70304444b87fddcba4d35f08_sdm_result",
+   "threshold": 0.5,
+   "suitable_cells": 10001,
+   "suitable_area_km2": 10001.0,
+   "percent_also_suitable_in_all": 0.8642
+  },
+  {
+   "run": "j177b0388d2104af0b78856e5b77cb36b_sdm_result",
+   "threshold": 0.5,
+   "suitable_cells": 9609,
+   "suitable_area_km2": 9609.0,
+   "percent_also_suitable_in_all": 0.8995
+  }
+ ],
+ "run_count": 2,
+ "cell_size": 1000.0,
+ "cells": {
+  "mapped_in_all_runs": 86223,
+  "mapped_total": [
+   86223,
+   86223
+  ]
+ },
+ "area_km2": {
+  "cell": 1.0,
+  "mapped_in_all_runs": 86223.0
+ },
+ "common": {
+  "cells": 8643,
+  "percent_of_mapped": 10.024,
+  "area_km2": 8643.0
+ },
+ "any": {
+  "cells": 10967,
+  "area_km2": 10967.0,
+  "jaccard_all": 0.7881
+ },
+ "by_count": [
+  {
+   "runs_suitable": 0,
+   "label": "Not suitable in any run",
+   "color": [
+    209,
+    213,
+    219
+   ],
+   "cells": 75256,
+   "percent": 87.281,
+   "area_km2": 75256.0
+  },
+  {
+   "runs_suitable": 1,
+   "label": "Suitable in 1 of 2 runs",
+   "color": [
+    255,
+    237,
+    160
+   ],
+   "cells": 2324,
+   "percent": 2.695,
+   "area_km2": 2324.0
+  },
+  {
+   "runs_suitable": 2,
+   "label": "Suitable in every run",
+   "color": [
+    22,
+    163,
+    74
+   ],
+   "cells": 8643,
+   "percent": 10.024,
+   "area_km2": 8643.0
+  }
+ ],
+ "pairs": [
+  {
+   "run_a": "je5a3a0eb70304444b87fddcba4d35f08_sdm_result",
+   "run_b": "j177b0388d2104af0b78856e5b77cb36b_sdm_result",
+   "both_cells": 8643,
+   "area_km2_both": 8643.0,
+   "jaccard": 0.7881
+  }
+ ],
+ "preserve": {
+  "note": "Cells whose center falls inside the Dangermond Preserve boundary. The grid is coarse (1 km), so cells along the edge are counted whole or not at all.",
+  "cells": {
+   "mapped_in_all_runs": 94
+  },
+  "common": {
+   "cells": 0,
+   "percent_of_mapped": 0.0,
+   "area_km2": 0.0
+  },
+  "by_count": [
+   {
+    "runs_suitable": 0,
+    "label": "Not suitable in any run",
+    "color": [
+     209,
+     213,
+     219
+    ],
+    "cells": 94,
+    "percent": 100.0,
+    "area_km2": 94.0
+   },
+   {
+    "runs_suitable": 1,
+    "label": "Suitable in 1 of 2 runs",
+    "color": [
+     255,
+     237,
+     160
+    ],
+    "cells": 0,
+    "percent": 0.0,
+    "area_km2": 0.0
+   },
+   {
+    "runs_suitable": 2,
+    "label": "Suitable in every run",
+    "color": [
+     22,
+     163,
+     74
+    ],
+    "cells": 0,
+    "percent": 0.0,
+    "area_km2": 0.0
+   }
+  ],
+  "runs": [
+   {
+    "run": "je5a3a0eb70304444b87fddcba4d35f08_sdm_result",
+    "suitable_cells": 0,
+    "suitable_area_km2": 0.0
+   },
+   {
+    "run": "j177b0388d2104af0b78856e5b77cb36b_sdm_result",
+    "suitable_cells": 0,
+    "suitable_area_km2": 0.0
+   }
+  ]
+ }
+}

@@ -9,6 +9,13 @@ export const GP_SERVICES = {
   sdmRandomForest: {
     url: `${ARCGIS_SERVER_URL}/rest/services/SDM_Random_Forest/GPServer`,
     task: 'SDM Random Forest',
+    /** Other tools published in the same service, which share its job output. */
+    /** Fits and saves one species' model on the baseline climate. */
+    trainTask: 'Train SDM Model',
+    /** Applies a saved model to a climate scenario, as Probability or Binary. */
+    predictTask: 'Predict SDM',
+    compareTask: 'Compare SDM Runs',
+    commonTask: 'Find Common Suitable Areas',
     mapServer: `${ARCGIS_SERVER_URL}/rest/services/SDM_Random_Forest/MapServer`,
     jobsDirectory: `${ARCGIS_SERVER_URL}/rest/directories/arcgisjobs/sdm_random_forest_gpserver`,
   },
@@ -78,6 +85,14 @@ export function climateMosaicUrl(
 }
 
 /**
+ * The climate the SDM is always trained on (current-climate normals). A
+ * future scenario is only ever a projection target: the model learns where the
+ * species lives today, then is applied to the future mosaic
+ * (twin_models/sdms/scripts/original/23_model_projection.R does the same).
+ */
+export const SDM_TRAINING_MOSAIC_URL = climateMosaicUrl(CLIMATE_SCENARIOS[0], '1981–2010');
+
+/**
  * Predictor variables the SDM uses. Fixed by the model developers and mirrored
  * by PREDICTOR_TAGS in twin_models/sdms/scripts/arcgis/sdm_rf_tool.pyt.
  */
@@ -92,11 +107,29 @@ export const SDM_PREDICTOR_VARIABLES = [
   { tag: 'bio18', label: 'Precipitation of Warmest Quarter', units: 'mm' },
 ] as const;
 
+/**
+ * Defaults and limits of the SDM comparison tools. Keep in sync with
+ * DEFAULT_PROBABILITY_THRESHOLD, MIN_CHANGE_DEFAULT and MAX_COMMON_RUNS in
+ * twin_models/sdms/scripts/arcgis/sdm_rf_tool.pyt.
+ */
+export const SDM_COMPARE_DEFAULTS = {
+  threshold: 0.5,
+  minChange: 0.05,
+  maxCommonRuns: 50,
+} as const;
+
 export const DEFAULT_SDM_INPUTS = {
   occurrences:
     'https://ca-gbif-featureserv.delightfulmeadow-1b7f96ac.westus2.azurecontainerapps.io/collections/gbif.tricounty_occurrences_arcgis_view',
   backgroundPoints:
     'https://dangermondpreserve-spatial.com/server/rest/services/Hosted/sampled_background_points/FeatureServer/0',
+  /**
+   * Polygon outline of the Preserve, for the Preserve-only statistics. The
+   * tools take it as a plain-string input (never stored in the toolbox, which
+   * would make publishing try to copy the layer) and check it is a polygon.
+   */
+  preserveBoundary:
+    'https://dangermondpreserve-spatial.com/server/rest/services/Hosted/preserve_boundary/FeatureServer/0',
 };
 
 /** Stored by the twin_models mockup login. Used until v2 sign-in exists. */

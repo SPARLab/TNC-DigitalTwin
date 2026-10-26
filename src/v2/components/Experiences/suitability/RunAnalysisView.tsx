@@ -115,7 +115,7 @@ interface ColumnChartProps {
 }
 
 /** Touching vertical bars, one per bin, scaled to the tallest bin. */
-function ColumnChart({
+export function ColumnChart({
   bins,
   colors,
   showShare = false,

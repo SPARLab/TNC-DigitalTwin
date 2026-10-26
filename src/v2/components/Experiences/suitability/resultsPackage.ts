@@ -94,8 +94,15 @@ export function buildDistributionSvg(analysis: SuitabilityRunAnalysis, title: st
   return parts.join('\n');
 }
 
-async function svgToPngBlob(svg: string): Promise<Blob | null> {
+export async function svgToPngBlob(svg: string): Promise<Blob | null> {
   if (typeof document === 'undefined') return null;
+  // Check for a canvas first: where there is none, loading the image is wasted.
+  const scale = 2;
+  const canvas = document.createElement('canvas');
+  canvas.width = CHART_WIDTH * scale;
+  canvas.height = CHART_HEIGHT * scale;
+  const context = canvas.getContext('2d');
+  if (!context) return null;
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
   try {
     const image = new Image();
@@ -104,12 +111,6 @@ async function svgToPngBlob(svg: string): Promise<Blob | null> {
       image.onerror = () => reject(new Error('Could not load chart SVG'));
       image.src = url;
     });
-    const scale = 2;
-    const canvas = document.createElement('canvas');
-    canvas.width = CHART_WIDTH * scale;
-    canvas.height = CHART_HEIGHT * scale;
-    const context = canvas.getContext('2d');
-    if (!context) return null;
     context.fillStyle = '#ffffff';
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
@@ -121,7 +122,7 @@ async function svgToPngBlob(svg: string): Promise<Blob | null> {
   }
 }
 
-function csvCell(value: string | number): string {
+export function csvCell(value: string | number): string {
   const text = String(value);
   return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
@@ -182,7 +183,7 @@ export function buildSettingsJson(record: SuitabilityRunRecord, cellSize: number
   );
 }
 
-async function fetchBytes(url: string): Promise<ArrayBuffer | null> {
+export async function fetchBytes(url: string): Promise<ArrayBuffer | null> {
   try {
     const response = await fetch(url);
     return response.ok ? await response.arrayBuffer() : null;
