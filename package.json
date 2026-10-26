@@ -4,8 +4,9 @@
   "description": "A React TypeScript application for browsing and visualizing environmental research data from the Dangermond Preserve",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
+    "dev": "node scripts/build-standalone-experiences.mjs --if-missing --warn-on-failure && vite",
+    "build": "npm run build:standalone-experiences && tsc && vite build",
+    "build:standalone-experiences": "node scripts/build-standalone-experiences.mjs",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "guard:v2-file-size": "node scripts/v2/check-file-size-guardrail.mjs",

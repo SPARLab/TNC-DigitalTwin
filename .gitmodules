@@ -1,0 +1,4 @@
+[submodule "standalone-experiences/creek-water-visualization"]
+	path = standalone-experiences/creek-water-visualization
+	url = https://github.com/wjthompso/TNC-Hydrology-Water-Flow-Visualization-POC.git
+	branch = main

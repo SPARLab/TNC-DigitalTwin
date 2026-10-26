@@ -49,3 +49,6 @@ dist-ssr
 # But exclude large JSON snapshots
 e2e/checkpoints/*.json
 twin_models/
+
+# Standalone Experience builds (npm run build:standalone-experiences)
+/public/standalone-experiences/

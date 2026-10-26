@@ -1,8 +1,8 @@
 // ============================================================================
 // ExperiencesPage — models and simulations gallery, ported from the
 // twin_models webapp ModelsPage. Selecting a card opens a map-backed workspace.
-// Suitability and SDM mount their geoprocessing panels; other experiences stay
-// on the coming-soon placeholder.
+// Suitability and SDM mount their geoprocessing panels; standalone experiences
+// embed their own built app; other experiences stay on the coming-soon placeholder.
 // ============================================================================
 
 import { useMemo, useState } from 'react';
@@ -13,9 +13,11 @@ import {
   EXPERIENCE_CATEGORIES,
   getExperienceById,
   getExperiencesByCategory,
+  isStandaloneExperience,
 } from '../config/experienceRegistry';
 import type { ExperienceDefinition } from '../config/experienceRegistry';
 import { ExperienceWorkspace } from '../components/Experiences/ExperienceWorkspace';
+import { StandaloneExperienceWorkspace } from '../components/Experiences/StandaloneExperienceWorkspace';
 import { UnderConstructionPanel } from '../components/shared/UnderConstructionPanel';
 import { FEEDBACK_PREVIEW_MODE } from '../config/feedbackPreview';
 
@@ -302,11 +304,19 @@ export function ExperiencesPage() {
       </div>
       {experience && (
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          <ExperienceWorkspace
-            key={experience.id}
-            experience={experience}
-            onClose={() => navigate('/experiences')}
-          />
+          {isStandaloneExperience(experience) ? (
+            <StandaloneExperienceWorkspace
+              key={experience.id}
+              experience={experience}
+              onClose={() => navigate('/experiences')}
+            />
+          ) : (
+            <ExperienceWorkspace
+              key={experience.id}
+              experience={experience}
+              onClose={() => navigate('/experiences')}
+            />
+          )}
         </div>
       )}
     </div>

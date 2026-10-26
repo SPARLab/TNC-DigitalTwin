@@ -3,9 +3,10 @@
 // Ported from the twin_models webapp mockup (tools/registry.js). Suitability
 // and Species Distribution Modeling have working control panels; remaining
 // simulations stay marked unavailable until their geoprocessing services exist.
+// Standalone Experiences are separate apps embedded whole (see StandaloneExperience).
 // ============================================================================
 
-import { Bug, Compass, Droplets, Flame, Layers, Sprout, TreePine } from 'lucide-react';
+import { Bug, Compass, Droplets, Flame, Layers, Sprout, TreePine, Waves } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export type ExperienceKind = 'model' | 'simulation';
@@ -16,7 +17,7 @@ export interface ExperienceCategory {
   icon: LucideIcon;
 }
 
-export interface ExperienceDefinition {
+interface ExperienceDefinitionBase {
   id: string;
   name: string;
   description: string;
@@ -29,11 +30,33 @@ export interface ExperienceDefinition {
   comingSoon: boolean;
   /** Card thumbnail. Falls back to the shared model still if omitted. */
   image: string;
+}
+
+/** Runs inside the shared workspace: a control panel beside a 2D map. */
+export interface MapWorkspaceExperience extends ExperienceDefinitionBase {
   /** Workspace map centre, [longitude, latitude]. */
   mapCenter: [number, number];
   mapZoom: number;
   /** Which geoprocessing panel to mount. Unset entries stay coming-soon. */
   panel?: 'suitability' | 'sdm';
+}
+
+/**
+ * A separately developed app (a git submodule under standalone-experiences/),
+ * built into public/ by scripts/build-standalone-experiences.mjs and embedded
+ * in an iframe below the Digital Twin header.
+ */
+export interface StandaloneExperience extends ExperienceDefinitionBase {
+  /** Same-origin URL of the built app's entry page. */
+  standaloneAppUrl: string;
+}
+
+export type ExperienceDefinition = MapWorkspaceExperience | StandaloneExperience;
+
+export function isStandaloneExperience(
+  experience: ExperienceDefinition,
+): experience is StandaloneExperience {
+  return 'standaloneAppUrl' in experience;
 }
 
 const DEFAULT_THUMBNAIL = '/modelpic.jpg';
@@ -93,6 +116,20 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     image: DEFAULT_THUMBNAIL,
     mapCenter: PRESERVE_CENTER,
     mapZoom: 10,
+  },
+  {
+    id: 'creek-water-visualization',
+    name: 'Creek Water Visualization',
+    description:
+      'Watch Jalama Creek rise and fall in 3D terrain, from USGS gauge ' +
+      'measurements and modeled estimates that illustrate approximate conditions.',
+    icon: Waves,
+    categoryId: 'water',
+    kind: 'model',
+    usesRealTimeData: false,
+    comingSoon: false,
+    image: '/experience-thumbnails/creek-water-visualization.jpg',
+    standaloneAppUrl: '/standalone-experiences/creek-water-visualization/index.html',
   },
   {
     id: 'water-budget',

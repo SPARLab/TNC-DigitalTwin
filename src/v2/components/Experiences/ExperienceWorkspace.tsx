@@ -21,11 +21,11 @@ import { SuitabilityPanel } from './SuitabilityPanel';
 import type { CompletedRun, PointsAction, PreviewAction, RasterScope, ResultLayerInfo } from './types';
 
 interface ExperienceWorkspaceProps {
-  experience: ExperienceDefinition;
+  experience: MapWorkspaceExperience;
   onClose: () => void;
 }
 
-function ComingSoonPanel({ experience }: { experience: ExperienceDefinition }) {
+function ComingSoonPanel({ experience }: { experience: MapWorkspaceExperience }) {
   const Icon = experience.icon;
 
   return (
