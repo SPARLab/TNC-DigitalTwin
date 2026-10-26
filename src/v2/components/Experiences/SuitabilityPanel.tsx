@@ -7,6 +7,7 @@ import { GP_SERVICES } from '../../config/geoprocessing';
 import { fetchCatalogRasters, submitGpJob } from '../../services/geoprocessingService';
 import { fetchRasterClassLabels } from '../../services/rasterClassLabels';
 import { experienceUi } from './experienceUi';
+import { WizardStepIndicator } from './WizardStepIndicator';
 import { GpJobStatus } from './GpJobStatus';
 import { initLayerConfig } from './LayerConfig';
 import { SuitabilityConfigureStep } from './suitability/SuitabilityConfigureStep';
@@ -74,62 +75,6 @@ function buildGpConfig(
     }
     return entry;
   });
-}
-
-function WizardStepIndicator({
-  step,
-  onStepChange,
-  locked,
-}: {
-  step: WizardStep;
-  onStepChange: (step: WizardStep) => void;
-  /** Blocks every step while an analysis is running. */
-  locked: boolean;
-}) {
-  const activeIndex = STEP_META.findIndex((entry) => entry.id === step);
-  return (
-    <nav aria-label="Suitability analysis steps" className="flex items-center gap-1">
-      {STEP_META.map((entry, index) => {
-        const isActive = entry.id === step;
-        const isComplete = index < activeIndex;
-        const canOpen = index <= activeIndex && !locked;
-        return (
-          <div key={entry.id} className="flex min-w-0 flex-1 items-center gap-1">
-            <button
-              type="button"
-              disabled={!canOpen}
-              onClick={() => onStepChange(entry.id)}
-              aria-current={isActive ? 'step' : undefined}
-              title={locked ? 'Unavailable while the analysis is running' : undefined}
-              className={`flex min-w-0 flex-1 flex-col items-center gap-1 ${
-                isActive ? 'text-emerald-800' : isComplete ? 'text-emerald-600' : 'text-gray-400'
-              } ${locked ? 'cursor-not-allowed opacity-50' : canOpen ? 'cursor-pointer' : 'cursor-default'}`}
-            >
-              <span
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
-                  isActive
-                    ? 'bg-emerald-600 text-white'
-                    : isComplete
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : 'bg-gray-100 text-gray-500'
-                }`}
-              >
-                {index + 1}
-              </span>
-              <span className="truncate text-xs font-medium">{entry.label}</span>
-            </button>
-            {index < STEP_META.length - 1 && (
-              <div
-                className={`mb-5 h-px w-2 flex-shrink-0 ${
-                  index < activeIndex ? 'bg-emerald-300' : 'bg-gray-200'
-                }`}
-              />
-            )}
-          </div>
-        );
-      })}
-    </nav>
-  );
 }
 
 export function SuitabilityPanel({
@@ -439,7 +384,13 @@ export function SuitabilityPanel({
 
   return (
     <div id="suitability-panel" className={experienceUi.panel}>
-      <WizardStepIndicator step={step} onStepChange={setStep} locked={isRunning} />
+      <WizardStepIndicator
+        steps={STEP_META}
+        step={step}
+        onStepChange={setStep}
+        label="Suitability analysis steps"
+        locked={isRunning}
+      />
 
       {step === 'intro' && (
         <SuitabilityIntroStep onStart={() => setStep('data')} />

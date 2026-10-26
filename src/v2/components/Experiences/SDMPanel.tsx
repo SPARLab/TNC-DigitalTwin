@@ -1,236 +1,422 @@
 // ============================================================================
-// SDMPanel — species, climate scenario, and output type for the Random Forest
-// habitat model.
+// SDMPanel — the Random Forest habitat model as a four-step wizard:
+//   1. Overview   what the model is and how a run works
+//   2. Species    choose a species, optionally map its records
+//   3. Scenario   choose one or more climates, optionally map their variables
+//   4. Output     probability or binary, then run
+//
+// A run trains the species' model once (or reuses the one already trained this
+// session), then predicts it onto each chosen climate one after another.
+// Finished runs are analyzed from the right-hand panel (SdmRunsPanel).
 // ============================================================================
 
-import { useCallback, useState } from 'react';
-import { Loader2, Play } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DEFAULT_SDM_INPUTS,
   GP_SERVICES,
-  CLIMATE_SCENARIOS,
-  climateMosaicUrl,
   SDM_PREDICTOR_VARIABLES,
-  type ClimateScenarioId,
+  SDM_TRAINING_MOSAIC_URL,
+  climateMosaicUrl,
 } from '../../config/geoprocessing';
-import { submitGpJob } from '../../services/geoprocessingService';
+import { fetchGpResultValue, submitGpJob } from '../../services/geoprocessingService';
+import { formatSpeciesLabel } from '../../../services/speciesNamesService';
 import { experienceUi } from './experienceUi';
 import { GpJobStatus } from './GpJobStatus';
-import { OccurrenceInfo } from './OccurrenceInfo';
-import { SpeciesSelect } from './SpeciesSelect';
-import type { GpJobRecord, PointsAction, ResultLayerInfo } from './types';
+import { SdmIntroStep } from './sdm/SdmIntroStep';
+import { SdmOutputStep } from './sdm/SdmOutputStep';
+import { SdmScenarioStep } from './sdm/SdmScenarioStep';
+import { SdmSpeciesStep } from './sdm/SdmSpeciesStep';
+import {
+  DEFAULT_SCENARIO_KEY,
+  SCENARIO_CHOICES,
+  climatePreviewAction,
+  findScenarioChoice,
+  type ScenarioChoice,
+} from './sdm/climatePreview';
+import type {
+  GpJobRecord,
+  PointsAction,
+  PreviewAction,
+  ResultLayerInfo,
+  SdmOutputType,
+} from './types';
+import { WizardStepIndicator } from './WizardStepIndicator';
+
+type SdmStep = 'intro' | 'species' | 'scenario' | 'output';
+
+const STEP_META: Array<{ id: SdmStep; label: string }> = [
+  { id: 'intro', label: 'Overview' },
+  { id: 'species', label: 'Species' },
+  { id: 'scenario', label: 'Scenario' },
+  { id: 'output', label: 'Output' },
+];
+
+const TERMINAL_STATUSES = new Set([
+  'esriJobSucceeded',
+  'esriJobFailed',
+  'esriJobCancelled',
+  'esriJobTimedOut',
+]);
+
+/** One job in a run: the model fit, or the prediction onto one climate. */
+interface QueuedJob {
+  key: string;
+  kind: 'train' | 'predict';
+  label: string;
+  /** Null until the job is submitted. */
+  record: GpJobRecord | null;
+  skipped?: boolean;
+}
+
+/** A model trained this session, kept so the next run does not fit it again. */
+interface TrainedModel {
+  species: string;
+  modelId: string;
+  trainedAt: number;
+}
 
 interface SDMPanelProps {
   token: string | null;
   onLayerAdded?: (info: ResultLayerInfo) => void;
   onTogglePoints?: (action: PointsAction) => void;
+  /** Species whose records are on the map. */
+  pointsOnMap?: string[];
+  /** Draws (or removes) a climate variable on the map. */
+  onPreviewLayer?: (action: PreviewAction) => void;
 }
 
 function sanitizeOutputName(name: string): string {
   return name.replace(/[^a-zA-Z0-9_\- ]/g, '').trim().replace(/\s+/g, '_');
 }
 
-export function SDMPanel({ token, onLayerAdded, onTogglePoints }: SDMPanelProps) {
+function formatTime(value: number): string {
+  return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(value);
+}
+
+export function SDMPanel({
+  token,
+  onLayerAdded,
+  onTogglePoints,
+  pointsOnMap,
+  onPreviewLayer,
+}: SDMPanelProps) {
+  const service = GP_SERVICES.sdmRandomForest;
+  const [step, setStep] = useState<SdmStep>('intro');
   const [species, setSpecies] = useState('');
-  const [scenarioId, setScenarioId] = useState<ClimateScenarioId>('current');
-  const [period, setPeriod] = useState<string>(CLIMATE_SCENARIOS[0].periods[0]);
-  const [outputType, setOutputType] = useState<'Probability' | 'Binary'>('Probability');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [job, setJob] = useState<GpJobRecord | null>(null);
+  const [commonName, setCommonName] = useState<string | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<ReadonlySet<string>>(
+    new Set([DEFAULT_SCENARIO_KEY]),
+  );
+  const [previewKey, setPreviewKey] = useState(DEFAULT_SCENARIO_KEY);
+  const [outputType, setOutputType] = useState<SdmOutputType>('Probability');
+  const [previewedTags, setPreviewedTags] = useState<ReadonlySet<string>>(new Set());
+  const [trained, setTrained] = useState<TrainedModel | null>(null);
+  const [retrain, setRetrain] = useState(false);
+  const [queue, setQueue] = useState<QueuedJob[]>([]);
+  const [progress, setProgress] = useState<string | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const scenario =
-    CLIMATE_SCENARIOS.find((candidate) => candidate.id === scenarioId) ?? CLIMATE_SCENARIOS[0];
-  const periods: readonly string[] = scenario.periods;
-  const activePeriod = periods.includes(period) ? period : periods[0];
-  const selectedStack = {
-    url: climateMosaicUrl(scenario, activePeriod),
-    label:
-      scenario.id === 'current'
-        ? `Current (${activePeriod})`
-        : `${scenario.label.split(' (')[0]} (${activePeriod})`,
+  const stopRef = useRef(false);
+  const waitersRef = useRef(new Map<string, (status: string) => void>());
+  useEffect(
+    () => () => {
+      // Leaving the panel stops a run from starting more jobs.
+      stopRef.current = true;
+    },
+    [],
+  );
+
+  const speciesLabel = species ? formatSpeciesLabel(species, commonName) : '';
+  // In display order, not the order they were ticked.
+  const choices = useMemo(
+    () => SCENARIO_CHOICES.filter((choice) => selectedKeys.has(choice.key)),
+    [selectedKeys],
+  );
+  const reusableModel = trained && trained.species === species ? trained : null;
+  const preview = findScenarioChoice(previewKey);
+
+  const variableOptions = useCallback(
+    (tag: string, choice: ScenarioChoice) => ({
+      tag,
+      label: SDM_PREDICTOR_VARIABLES.find((variable) => variable.tag === tag)?.label ?? tag,
+      scenario: choice.scenario,
+      period: choice.period,
+    }),
+    [],
+  );
+
+  const handlePreviewKeyChange = (nextKey: string) => {
+    if (onPreviewLayer && previewedTags.size > 0) {
+      const next = findScenarioChoice(nextKey);
+      // Move the variables already on the map over to the other climate.
+      for (const tag of previewedTags) {
+        onPreviewLayer(climatePreviewAction('remove', variableOptions(tag, preview)));
+        onPreviewLayer(climatePreviewAction('add', variableOptions(tag, next)));
+      }
+    }
+    setPreviewKey(nextKey);
   };
 
-  const handleScenarioChange = (next: ClimateScenarioId) => {
-    const nextScenario = CLIMATE_SCENARIOS.find((candidate) => candidate.id === next);
-    setScenarioId(next);
-    // Keep the chosen period when the new scenario offers it, otherwise reset.
-    const available: readonly string[] = nextScenario?.periods ?? [];
-    if (!available.includes(period)) setPeriod(available[0] ?? period);
+  const handleTogglePreview = (tag: string) => {
+    const shown = previewedTags.has(tag);
+    onPreviewLayer?.(climatePreviewAction(shown ? 'remove' : 'add', variableOptions(tag, preview)));
+    setPreviewedTags((current) => {
+      const next = new Set(current);
+      if (shown) next.delete(tag);
+      else next.add(tag);
+      return next;
+    });
   };
 
-  const handleRun = useCallback(async () => {
-    if (!species || !selectedStack) return;
-    setIsSubmitting(true);
+  const handleToggleScenario = (key: string) => {
+    setSelectedKeys((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  /** Resolves when a job reaches its final state. Register before it can finish. */
+  const waitForJob = (jobId: string) =>
+    new Promise<string>((resolve) => {
+      waitersRef.current.set(jobId, resolve);
+    });
+
+  const handleJobStatus = useCallback((jobId: string, status: string) => {
+    if (!TERMINAL_STATUSES.has(status)) return;
+    waitersRef.current.get(jobId)?.(status);
+    waitersRef.current.delete(jobId);
+  }, []);
+
+  const attachRecord = (key: string, record: GpJobRecord) =>
+    setQueue((current) => current.map((job) => (job.key === key ? { ...job, record } : job)));
+
+  const handleRun = async () => {
+    if (!species || choices.length === 0 || isRunning) return;
+    setIsRunning(true);
     setError(null);
-    setJob(null);
+    stopRef.current = false;
+
+    const plan: QueuedJob[] = [];
+    const reuse = reusableModel && !retrain ? reusableModel : null;
+    if (!reuse) {
+      plan.push({
+        key: 'train',
+        kind: 'train',
+        label: `${speciesLabel} · training the model`,
+        record: null,
+      });
+    }
+    for (const choice of choices) {
+      plan.push({ key: choice.key, kind: 'predict', label: choice.label, record: null });
+    }
+    setQueue(plan);
 
     try {
-      const jobId = await submitGpJob(
-        GP_SERVICES.sdmRandomForest.url,
-        GP_SERVICES.sdmRandomForest.task,
-        {
-          occurrences: DEFAULT_SDM_INPUTS.occurrences,
-          species,
-          predictors: selectedStack.url,
-          background_points: DEFAULT_SDM_INPUTS.backgroundPoints,
-          output_type: outputType,
-          output_raster: sanitizeOutputName(species),
-        },
-        token,
-        'species distribution',
-      );
+      let modelId = reuse?.modelId ?? null;
 
-      setJob({
-        id: jobId,
-        status: 'esriJobSubmitted',
-        summary: species,
-        scenario: selectedStack.label,
-        defaultFilename: 'Habitat_Suitability.tif',
-        jobsDirectory: GP_SERVICES.sdmRandomForest.jobsDirectory,
-        filenamePattern: 'raster-written',
-        result: {
-          jobId,
-          mapServerUrl: GP_SERVICES.sdmRandomForest.mapServer,
-          groupTitle: species,
-          title: `${species} · ${selectedStack.label}`,
-          outputType,
-        },
-      });
+      if (!modelId) {
+        setProgress('Training the model…');
+        const trainJobId = await submitGpJob(
+          service.url,
+          service.trainTask,
+          {
+            occurrences: DEFAULT_SDM_INPUTS.occurrences,
+            species,
+            // Always the current climate; a future scenario is only predicted onto.
+            predictors: SDM_TRAINING_MOSAIC_URL,
+            background_points: DEFAULT_SDM_INPUTS.backgroundPoints,
+          },
+          token,
+          'species model training',
+        );
+        const trainDone = waitForJob(trainJobId);
+        attachRecord('train', {
+          id: trainJobId,
+          status: 'esriJobSubmitted',
+          summary: speciesLabel,
+          scenario: 'training the model',
+          defaultFilename: 'model.txt',
+          jobsDirectory: service.jobsDirectory,
+          filenamePattern: 'raster-written',
+          result: {
+            jobId: trainJobId,
+            mapServerUrl: service.mapServer,
+            groupTitle: speciesLabel,
+            title: `${speciesLabel} model`,
+          },
+        });
+        const trainStatus = await trainDone;
+        if (trainStatus !== 'esriJobSucceeded') {
+          throw new Error('The model could not be trained. See the messages above.');
+        }
+        const reported = await fetchGpResultValue(
+          service.url,
+          service.trainTask,
+          trainJobId,
+          'model_id',
+          token,
+        ).catch(() => null);
+        // On the server a model's id is the id of the job that trained it.
+        modelId = typeof reported === 'string' && reported ? reported : trainJobId;
+        setTrained({ species, modelId, trainedAt: Date.now() });
+        setRetrain(false);
+      }
+
+      for (let index = 0; index < choices.length; index += 1) {
+        const choice = choices[index];
+        if (stopRef.current) {
+          const remaining = new Set(choices.slice(index).map((item) => item.key));
+          setQueue((current) =>
+            current.map((job) =>
+              job.kind === 'predict' && remaining.has(job.key) ? { ...job, skipped: true } : job,
+            ),
+          );
+          break;
+        }
+        setProgress(`Mapping ${index + 1} of ${choices.length}…`);
+
+        const stackUrl = climateMosaicUrl(choice.scenario, choice.period);
+        const jobId = await submitGpJob(
+          service.url,
+          service.predictTask,
+          {
+            model_id: modelId,
+            ...(stackUrl !== SDM_TRAINING_MOSAIC_URL ? { projection_predictors: stackUrl } : {}),
+            preserve_boundary: DEFAULT_SDM_INPUTS.preserveBoundary,
+            output_type: outputType,
+            output_raster: sanitizeOutputName(species),
+          },
+          token,
+          'species distribution',
+        );
+        const done = waitForJob(jobId);
+        attachRecord(choice.key, {
+          id: jobId,
+          status: 'esriJobSubmitted',
+          summary: speciesLabel,
+          scenario: choice.label,
+          defaultFilename: 'Habitat_Suitability.tif',
+          jobsDirectory: service.jobsDirectory,
+          filenamePattern: 'raster-written',
+          result: {
+            jobId,
+            mapServerUrl: service.mapServer,
+            groupTitle: speciesLabel,
+            title: `${speciesLabel} · ${choice.label}`,
+            outputType,
+            kind: 'model',
+            species: speciesLabel,
+            speciesKey: species,
+            scenario: choice.label,
+          },
+        });
+        // One at a time: the service runs only a couple of jobs at once.
+        await done;
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : String(caught));
     } finally {
-      setIsSubmitting(false);
+      setProgress(null);
+      setIsRunning(false);
     }
-  }, [outputType, selectedStack, species, token]);
+  };
+
+  const speciesChosen = species.length > 0;
+  const stepEnabled = useMemo(
+    () => (id: SdmStep) => id === 'species' || speciesChosen,
+    [speciesChosen],
+  );
 
   return (
     <div id="sdm-panel" className={experienceUi.panel}>
-      <p className={experienceUi.description}>
-        Model habitat suitability for species under present or future climate
-        scenarios.
-      </p>
+      <WizardStepIndicator
+        steps={STEP_META}
+        step={step}
+        onStepChange={setStep}
+        label="Species model steps"
+        locked={isRunning}
+        isStepEnabled={stepEnabled}
+      />
 
-      <div className={experienceUi.section}>
-        <label className={experienceUi.label}>Species Name</label>
-        <SpeciesSelect value={species} onChange={setSpecies} />
-      </div>
+      {step === 'intro' && <SdmIntroStep onStart={() => setStep('species')} />}
 
-      <OccurrenceInfo species={species} onTogglePoints={onTogglePoints} />
-
-      <div className={experienceUi.section}>
-        <label className={experienceUi.label} htmlFor="sdm-climate-select">
-          Climate Scenario
-        </label>
-        <select
-          id="sdm-climate-select"
-          value={scenarioId}
-          onChange={(event) => handleScenarioChange(event.target.value as ClimateScenarioId)}
-          className={experienceUi.input}
-        >
-          {CLIMATE_SCENARIOS.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <p className={experienceUi.hint}>{scenario.hint}</p>
-      </div>
-
-      <div className={experienceUi.section}>
-        <label className={experienceUi.label} htmlFor="sdm-period-select">
-          Time Period
-        </label>
-        <select
-          id="sdm-period-select"
-          value={activePeriod}
-          onChange={(event) => setPeriod(event.target.value)}
-          disabled={periods.length < 2}
-          className={experienceUi.input}
-        >
-          {periods.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className={experienceUi.section}>
-        <span className={experienceUi.label}>Predictor Variables</span>
-        <p className={experienceUi.hint}>
-          CHELSA V2.1 bioclimatic variables from the selected scenario (
-          <a
-            href={selectedStack.url}
-            target="_blank"
-            rel="noreferrer"
-            className="text-emerald-700 underline"
-          >
-            source mosaic
-          </a>
-          ).
-        </p>
-        <ul className="flex flex-col gap-1">
-          {SDM_PREDICTOR_VARIABLES.map((variable) => (
-            <li key={variable.tag} className={experienceUi.body}>
-              <span className="font-mono text-xs text-gray-500">{variable.tag}</span>{' '}
-              {variable.label}
-              {variable.units ? ` (${variable.units})` : ''}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className={experienceUi.section}>
-        <span className={experienceUi.label}>Output Type</span>
-        <div role="group" aria-label="Output type" className={experienceUi.toggleGroup}>
-          {(['Probability', 'Binary'] as const).map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => setOutputType(option)}
-              className={`${experienceUi.toggleBtn} ${
-                outputType === option ? experienceUi.toggleBtnActive : ''
-              }`}
-            >
-              {option}
-            </button>
-          ))}
-        </div>
-        <p className={experienceUi.hint}>
-          {outputType === 'Probability'
-            ? 'Continuous suitability from 0 to 1.'
-            : "Suitable (1) / unsuitable (0) using Youden's J threshold."}
-        </p>
-      </div>
-
-      {error && <div className={experienceUi.error}>{error}</div>}
-
-      <button
-        type="button"
-        onClick={handleRun}
-        disabled={!species || isSubmitting}
-        className={experienceUi.runBtn}
-      >
-        {isSubmitting ? (
-          <>
-            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Submitting…
-          </>
-        ) : (
-          <>
-            <Play className="h-3.5 w-3.5" /> Run Model
-          </>
-        )}
-      </button>
-
-      {job && (
-        <GpJobStatus
-          job={job}
-          serviceUrl={GP_SERVICES.sdmRandomForest.url}
-          task={GP_SERVICES.sdmRandomForest.task}
-          token={token}
-          onLayerAdded={onLayerAdded}
+      {step === 'species' && (
+        <SdmSpeciesStep
+          species={species}
+          onChange={(nextSpecies, nextCommonName) => {
+            setSpecies(nextSpecies);
+            setCommonName(nextCommonName ?? null);
+          }}
+          onTogglePoints={onTogglePoints}
+          pointsOnMap={pointsOnMap}
+          onBack={() => setStep('intro')}
+          onContinue={() => setStep('scenario')}
         />
+      )}
+
+      {step === 'scenario' && (
+        <SdmScenarioStep
+          selected={selectedKeys}
+          onToggleScenario={handleToggleScenario}
+          previewKey={previewKey}
+          onPreviewKeyChange={handlePreviewKeyChange}
+          previewedTags={previewedTags}
+          onTogglePreview={handleTogglePreview}
+          previewMosaicUrl={climateMosaicUrl(preview.scenario, preview.period)}
+          onBack={() => setStep('species')}
+          onContinue={() => setStep('output')}
+        />
+      )}
+
+      {step === 'output' && (
+        <>
+          <SdmOutputStep
+            outputType={outputType}
+            onOutputChange={setOutputType}
+            speciesLabel={speciesLabel}
+            scenarioLabels={choices.map((choice) => choice.label)}
+            reusableModel={reusableModel ? { trainedAt: formatTime(reusableModel.trainedAt) } : null}
+            retrain={retrain}
+            onRetrainChange={setRetrain}
+            isRunning={isRunning}
+            progress={progress}
+            error={error}
+            onBack={() => setStep('scenario')}
+            onRun={handleRun}
+            onStop={() => {
+              stopRef.current = true;
+            }}
+          />
+          {queue.length > 0 && (
+            <ul className="flex flex-col gap-2" aria-label="Jobs">
+              {queue.map((job) =>
+                job.record ? (
+                  <li key={job.key}>
+                    <GpJobStatus
+                      job={job.record}
+                      showDownloads={false}
+                      serviceUrl={service.url}
+                      task={job.kind === 'train' ? service.trainTask : service.predictTask}
+                      token={token}
+                      onLayerAdded={job.kind === 'predict' ? onLayerAdded : undefined}
+                      onStatusChange={(status) => handleJobStatus(job.record!.id, status)}
+                    />
+                  </li>
+                ) : (
+                  <li
+                    key={job.key}
+                    className="rounded-card border border-dashed border-gray-300 px-3 py-2 text-xs text-gray-500"
+                  >
+                    {job.skipped ? 'Skipped' : 'Waiting'} · {job.label}
+                  </li>
+                ),
+              )}
+            </ul>
+          )}
+        </>
       )}
     </div>
   );

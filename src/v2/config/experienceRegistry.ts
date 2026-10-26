@@ -73,7 +73,7 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     categoryId: 'biodiversity',
     kind: 'model',
     usesRealTimeData: false,
-    comingSoon: true,
+    comingSoon: false,
     image: DEFAULT_THUMBNAIL,
     mapCenter: PRESERVE_CENTER,
     mapZoom: 10,

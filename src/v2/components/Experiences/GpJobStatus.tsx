@@ -13,13 +13,19 @@ import {
   XCircle,
 } from 'lucide-react';
 import {
+  SDM_SUMMARY_PARAM,
   fetchGpJobPngUrl,
   fetchGpOutputMapImage,
+  fetchGpResultValue,
   fetchGpRunAnalysis,
+  parseSdmCommonAreas,
+  parseSdmComparison,
+  parseSdmSummary,
   pollGpJob,
+  tiffDownloadsFromMessages,
   tiffUrlFromMessages,
 } from '../../services/geoprocessingService';
-import type { GpJobRecord, GpMessage, ResultLayerInfo } from './types';
+import type { GpJobRecord, GpMessage, ResultLayerInfo, RunDownload } from './types';
 
 const POLL_MS = 5000;
 
@@ -43,6 +49,11 @@ interface GpJobStatusProps {
   onLayerAdded?: (info: ResultLayerInfo) => void;
   /** Called whenever the job status changes, including the first status. */
   onStatusChange?: (status: string) => void;
+  /**
+   * Show the download links when the job finishes. Panels with a download tab
+   * of their own turn this off, so files are saved from one place.
+   */
+  showDownloads?: boolean;
 }
 
 export function GpJobStatus({
@@ -52,6 +63,7 @@ export function GpJobStatus({
   token,
   onLayerAdded,
   onStatusChange,
+  showDownloads = true,
 }: GpJobStatusProps) {
   const [status, setStatus] = useState(job.status);
   const onStatusChangeRef = useRef(onStatusChange);
@@ -63,12 +75,14 @@ export function GpJobStatus({
   const [messages, setMessages] = useState<GpMessage[]>([]);
   const [pngUrl, setPngUrl] = useState<string | null>(null);
   const [tifUrl, setTifUrl] = useState<string | null>(null);
+  const [downloads, setDownloads] = useState<RunDownload[]>([]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     let isCancelled = false;
     setPngUrl(null);
     setTifUrl(null);
+    setDownloads([]);
     setStatus(job.status);
     setMessages([]);
 
@@ -98,15 +112,29 @@ export function GpJobStatus({
         const analysis = job.result.record
           ? await fetchGpRunAnalysis(serviceUrl, task, job.id, token).catch(() => null)
           : null;
+        // SDM jobs (model, comparison, common areas) write their figures as JSON.
+        const kind = job.result.kind;
+        const sdmJson = kind
+          ? await fetchGpResultValue(serviceUrl, task, job.id, SDM_SUMMARY_PARAM, token).catch(
+              () => null,
+            )
+          : null;
         if (isCancelled) return;
+        const published = kind ? tiffDownloadsFromMessages(snapshot.messages) : [];
         setPngUrl(pngUrl);
         setTifUrl(tifUrl);
+        setDownloads(published);
         onLayerAdded?.({
           ...job.result,
           summary: job.summary,
           pngUrl,
           tifUrl,
+          mapExtent: extent,
           analysis,
+          downloads: published,
+          sdmSummary: kind === 'model' ? parseSdmSummary(sdmJson) : null,
+          comparison: kind === 'comparison' ? parseSdmComparison(sdmJson) : null,
+          common: kind === 'common' ? parseSdmCommonAreas(sdmJson) : null,
         });
         return;
       }
@@ -184,7 +212,7 @@ export function GpJobStatus({
         </div>
       )}
 
-      {(pngUrl || tifUrl) && (
+      {showDownloads && (pngUrl || tifUrl || downloads.length > 0) && (
         <div className="mt-2 flex flex-wrap items-center gap-3">
           {pngUrl && (
             <a
@@ -197,7 +225,21 @@ export function GpJobStatus({
               Download PNG
             </a>
           )}
-          {tifUrl && (
+          {downloads.length > 0
+            ? downloads.map((download) => (
+                <a
+                  key={download.url}
+                  href={download.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 hover:text-emerald-800"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  {download.label} TIFF
+                </a>
+              ))
+            : null}
+          {tifUrl && downloads.length === 0 && (
             <a
               href={tifUrl}
               target="_blank"
