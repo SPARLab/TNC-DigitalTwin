@@ -4,10 +4,8 @@
 // Used on both edges of the monitoring and catalog pages so the map can be given
 // the full window. Width and collapsed state persist per panel.
 //
-// Growing a panel scales its contents rather than just adding whitespace, so the
-// extra room buys larger readings and labels. That is done with CSS zoom on a
-// content wrapper: it scales text, icons, and spacing together, where a font-size
-// change alone would leave fixed-size icons and padding behind.
+// Resizing changes only the panel's width. Text size follows the browser zoom
+// (Cmd +/-), never the drag.
 // ============================================================================
 
 import {
@@ -48,11 +46,6 @@ interface ResizablePanelProps {
   /** Accessible name, also used for the toggle and drag handle labels. */
   label: string;
   /**
-   * Largest content scale, reached at `maxWidth`. Contents never scale below 1:
-   * narrowing a panel should crop it, not shrink the text.
-   */
-  maxScale?: number;
-  /**
    * Keep the contents mounted (just hidden) while collapsed, so in-progress
    * form state survives. Off by default: collapsed panels unmount.
    */
@@ -62,8 +55,6 @@ interface ResizablePanelProps {
 
 /** Keyboard resize step, in pixels. */
 const KEYBOARD_STEP = 16;
-
-const DEFAULT_MAX_SCALE = 1.35;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -78,7 +69,6 @@ export const ResizablePanel = forwardRef<ResizablePanelHandle, ResizablePanelPro
       minWidth,
       maxWidth,
       label,
-      maxScale = DEFAULT_MAX_SCALE,
       keepMounted = false,
       children,
     },
@@ -263,11 +253,6 @@ export const ResizablePanel = forwardRef<ResizablePanelHandle, ResizablePanelPro
       [side, width, setWidth, minWidth, maxWidth],
     );
 
-    // Contents hold their design size up to the default width, then grow with it.
-    const scale = width <= defaultWidth
-      ? 1
-      : 1 + ((width - defaultWidth) / (maxWidth - defaultWidth)) * (maxScale - 1);
-
     const isLeft = side === 'left';
     const ToggleIcon = isLeft
       ? (isCollapsed ? ChevronRight : ChevronLeft)
@@ -324,11 +309,7 @@ export const ResizablePanel = forwardRef<ResizablePanelHandle, ResizablePanelPro
       >
         {(!isCollapsed || keepMounted) && (
           <div
-            // Percentages inside a zoomed element already resolve against the
-            // containing block divided by the zoom, so a plain 100% renders back to
-            // the panel's full width. Dividing here as well would leave a gap.
             style={{
-              zoom: scale,
               width: '100%',
               height: '100%',
               display: isCollapsed ? 'none' : undefined,
