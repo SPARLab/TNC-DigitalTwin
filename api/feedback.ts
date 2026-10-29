@@ -65,9 +65,14 @@ function buildHtml(payload: FeedbackPayload): string {
 
 export async function POST(request: Request): Promise<Response> {
   const { SMTP_HOST, SMTP_USER, SMTP_PASSWORD, FEEDBACK_TO_EMAIL } = process.env;
-  const port = Number(process.env.SMTP_PORT ?? 465);
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASSWORD || !FEEDBACK_TO_EMAIL) {
-    return Response.json({ error: 'Feedback email is not configured.' }, { status: 503 });
+  // An empty SMTP_PORT counts as unset (Number('') is 0, which would never connect).
+  const port = Number(process.env.SMTP_PORT?.trim() || 465);
+  const missing = Object.entries({ SMTP_HOST, SMTP_USER, SMTP_PASSWORD, FEEDBACK_TO_EMAIL })
+    .filter(([, value]) => !value?.trim())
+    .map(([name]) => name);
+  if (missing.length > 0) {
+    // Variable names only, never values, so the reply is safe to show.
+    return Response.json({ error: 'Feedback email is not configured.', missing }, { status: 503 });
   }
 
   let payload: FeedbackPayload | null;
@@ -79,18 +84,18 @@ export async function POST(request: Request): Promise<Response> {
   if (!payload) return Response.json({ error: 'Invalid feedback.' }, { status: 400 });
 
   const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
+    host: SMTP_HOST!.trim(),
     port,
     secure: port === 465,
-    auth: { user: SMTP_USER, pass: SMTP_PASSWORD },
+    auth: { user: SMTP_USER!.trim(), pass: SMTP_PASSWORD!.replace(/\s+/g, '') },
   });
   try {
     // Awaited: a Vercel function stops as soon as it responds, so the send must finish first.
     await transporter.sendMail({
-      from: SMTP_USER,
-      to: FEEDBACK_TO_EMAIL,
+      from: SMTP_USER!.trim(),
+      to: FEEDBACK_TO_EMAIL!.trim(),
       replyTo: payload.email ?? undefined,
-      subject: `[Creek feedback] ${payload.title}`,
+      subject: `[Digital Twin feedback] ${payload.title}`,
       html: buildHtml(payload),
       attachments: payload.attachments.map((file) => ({
         filename: file.name,
