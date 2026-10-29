@@ -1,14 +1,10 @@
 // Vercel serverless function: receives the feedback page's JSON and emails it
-// over SMTP (the standard mail-server protocol), for example through Google
-// Workspace. Set these in the Vercel project's environment variables:
-//   SMTP_HOST             e.g. smtp.gmail.com
-//   SMTP_PORT             465 (implicit TLS, default) or 587 (STARTTLS)
-//   SMTP_USER             the mailbox that sends, e.g. feedback@yourdomain.org
-//   SMTP_PASSWORD         a Google "app password", not the account's normal password
+// through Resend (https://resend.com), which Vercel installs from its Marketplace.
+// Vercel has no email service of its own. Server-side environment variables:
+//   RESEND_API_KEY        added by the Resend Marketplace install
 //   FEEDBACK_TO_EMAIL     where feedback arrives
-// Vercel allows outbound ports 465 and 587; port 25 is blocked.
-
-import nodemailer from 'nodemailer';
+//   FEEDBACK_FROM_EMAIL   sender on a domain verified in Resend, e.g. "Digital Twin feedback <feedback@yourdomain.org>".
+//                         Resend's test sender "onboarding@resend.dev" only delivers to the Resend account owner's own address.
 
 const MAX_ATTACHMENTS = 5;
 
@@ -64,10 +60,8 @@ function buildHtml(payload: FeedbackPayload): string {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const { SMTP_HOST, SMTP_USER, SMTP_PASSWORD, FEEDBACK_TO_EMAIL } = process.env;
-  // An empty SMTP_PORT counts as unset (Number('') is 0, which would never connect).
-  const port = Number(process.env.SMTP_PORT?.trim() || 465);
-  const missing = Object.entries({ SMTP_HOST, SMTP_USER, SMTP_PASSWORD, FEEDBACK_TO_EMAIL })
+  const { RESEND_API_KEY, FEEDBACK_TO_EMAIL, FEEDBACK_FROM_EMAIL } = process.env;
+  const missing = Object.entries({ RESEND_API_KEY, FEEDBACK_TO_EMAIL, FEEDBACK_FROM_EMAIL })
     .filter(([, value]) => !value?.trim())
     .map(([name]) => name);
   if (missing.length > 0) {
@@ -83,29 +77,21 @@ export async function POST(request: Request): Promise<Response> {
   }
   if (!payload) return Response.json({ error: 'Invalid feedback.' }, { status: 400 });
 
-  const transporter = nodemailer.createTransport({
-    host: SMTP_HOST!.trim(),
-    port,
-    secure: port === 465,
-    auth: { user: SMTP_USER!.trim(), pass: SMTP_PASSWORD!.replace(/\s+/g, '') },
-  });
-  try {
-    // Awaited: a Vercel function stops as soon as it responds, so the send must finish first.
-    await transporter.sendMail({
-      from: SMTP_USER!.trim(),
-      to: FEEDBACK_TO_EMAIL!.trim(),
-      replyTo: payload.email ?? undefined,
+  const resendResponse = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${RESEND_API_KEY!.trim()}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: FEEDBACK_FROM_EMAIL!.trim(),
+      to: [FEEDBACK_TO_EMAIL!.trim()],
+      reply_to: payload.email ?? undefined,
       subject: `[Digital Twin feedback] ${payload.title}`,
       html: buildHtml(payload),
-      attachments: payload.attachments.map((file) => ({
-        filename: file.name,
-        content: file.contentBase64,
-        encoding: 'base64',
-        contentType: file.type,
-      })),
-    });
-  } catch (error) {
-    console.error('SMTP send failed', error);
+      attachments: payload.attachments.map((file) => ({ filename: file.name, content: file.contentBase64 })),
+    }),
+  });
+  if (!resendResponse.ok) {
+    // Logged server-side only; Resend's message names the cause (unverified domain, bad key, and so on).
+    console.error('Resend rejected the feedback email', resendResponse.status, await resendResponse.text());
     return Response.json({ error: 'Feedback could not be delivered.' }, { status: 502 });
   }
   return Response.json({ ok: true });
