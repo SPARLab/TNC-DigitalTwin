@@ -1,6 +1,6 @@
 // ============================================================================
 // NavRail — collapsible platform navigation rail (Home / About / Catalog /
-// Monitoring / Experiences / Notebooks). Ported from the twin_models webapp
+// Monitoring / Experiences / Notebooks, with Feedback pinned to the bottom). Ported from the twin_models webapp
 // mockup sidebar.
 // ============================================================================
 
@@ -8,7 +8,7 @@ import { Fragment, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
-import { PLATFORM_NAV_ITEMS, isNavItemActive } from '../../config/navigation';
+import { FEEDBACK_NAV_ITEM, PLATFORM_NAV_ITEMS, isNavItemActive } from '../../config/navigation';
 import { COMPACT_VIEWPORT_QUERY, NARROW_VIEWPORT_QUERY } from '../../config/layout';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { closeNavMenu, toggleNavMenu, useNavMenuOpen } from './navMenuStore';
@@ -187,6 +187,45 @@ export function NavRail() {
             );
           })}
         </ul>
+
+        <div
+          id="nav-rail-feedback-section"
+          className={`flex-shrink-0 border-t border-white/10 py-2 ${isExpanded ? 'px-2' : 'flex justify-center px-2'}`}
+        >
+          {(() => {
+            const FeedbackIcon = FEEDBACK_NAV_ITEM.icon;
+            const isActive = isNavItemActive(FEEDBACK_NAV_ITEM.path, location.pathname);
+            return (
+              <button
+                id="nav-rail-item-feedback"
+                type="button"
+                onClick={() => {
+                  // Remember where the visitor was, so the feedback can say which section it is about.
+                  navigate(FEEDBACK_NAV_ITEM.path, { state: { from: location.pathname } });
+                  closeNavMenu();
+                }}
+                title={FEEDBACK_NAV_ITEM.label}
+                aria-current={isActive ? 'page' : undefined}
+                className={`relative flex items-center rounded-md transition-colors ${
+                  isExpanded ? 'w-full gap-2.5 px-2.5 py-2' : 'h-12 w-12 flex-col justify-center gap-0.5'
+                } ${isActive ? 'bg-white/15 text-white' : 'text-emerald-200/70 hover:bg-white/10 hover:text-white'}`}
+              >
+                {isActive && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r bg-emerald-300"
+                  />
+                )}
+                <FeedbackIcon className="h-5 w-5 flex-shrink-0" />
+                {isExpanded ? (
+                  <span className="truncate text-xs font-medium">{FEEDBACK_NAV_ITEM.label}</span>
+                ) : (
+                  <span className="text-[9px] font-semibold uppercase tracking-wide">{FEEDBACK_NAV_ITEM.shortLabel}</span>
+                )}
+              </button>
+            );
+          })()}
+        </div>
       </nav>
     </>
   );

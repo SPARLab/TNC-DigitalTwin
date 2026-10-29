@@ -8,6 +8,7 @@
 //           ├── /notebooks              → NotebooksPage
 //           ├── /monitoring             → MonitoringPage
 //           ├── /experiences            → ExperiencesPage
+//           ├── /feedback               → FeedbackPage
 //           └── /catalog                → CatalogWorkbench
 // ============================================================================
 

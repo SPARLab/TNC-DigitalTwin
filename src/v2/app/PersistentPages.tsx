@@ -15,6 +15,7 @@ import { CatalogWorkbench } from '../pages/CatalogWorkbench';
 import { MonitoringPage } from '../pages/MonitoringPage';
 import { ExperiencesPage } from '../pages/ExperiencesPage';
 import { NotebooksPage } from '../pages/NotebooksPage';
+import { FeedbackPage } from '../pages/FeedbackPage';
 import { platformSectionFromPath, type PlatformSection } from './platformSections';
 
 const SECTION_PAGES: Record<PlatformSection, ComponentType> = {
@@ -24,6 +25,7 @@ const SECTION_PAGES: Record<PlatformSection, ComponentType> = {
   monitoring: MonitoringPage,
   experiences: ExperiencesPage,
   notebooks: NotebooksPage,
+  feedback: FeedbackPage,
 };
 
 export function PersistentPages() {

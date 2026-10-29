@@ -4,7 +4,7 @@
 
 import { NOTEBOOKS_ENABLED } from '../config/featureFlags';
 
-export type PlatformSection = 'home' | 'about' | 'catalog' | 'monitoring' | 'experiences' | 'notebooks';
+export type PlatformSection = 'home' | 'about' | 'catalog' | 'monitoring' | 'experiences' | 'notebooks' | 'feedback';
 
 export function platformSectionFromPath(
   pathname: string,
@@ -14,6 +14,7 @@ export function platformSectionFromPath(
   if (pathname === '/about' || pathname.startsWith('/about/')) return 'about';
   if (pathname === '/catalog' || pathname.startsWith('/catalog/')) return 'catalog';
   if (pathname === '/monitoring' || pathname.startsWith('/monitoring/')) return 'monitoring';
+  if (pathname === '/feedback' || pathname.startsWith('/feedback/')) return 'feedback';
   if (pathname === '/experiences' || pathname.startsWith('/experiences/')) return 'experiences';
   // Hidden routes fall through to null, which redirects home.
   if (notebooksEnabled && (pathname === '/notebooks' || pathname.startsWith('/notebooks/'))) {

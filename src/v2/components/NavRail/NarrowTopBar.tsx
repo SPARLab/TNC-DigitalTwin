@@ -5,12 +5,12 @@
 // ============================================================================
 
 import { useLocation } from 'react-router-dom';
-import { PLATFORM_NAV_ITEMS, isNavItemActive } from '../../config/navigation';
+import { FEEDBACK_NAV_ITEM, PLATFORM_NAV_ITEMS, isNavItemActive } from '../../config/navigation';
 import { NavMenuButton } from './NavMenuButton';
 
 export function NarrowTopBar() {
   const { pathname } = useLocation();
-  const section = PLATFORM_NAV_ITEMS.find((item) => isNavItemActive(item.path, pathname));
+  const section = [...PLATFORM_NAV_ITEMS, FEEDBACK_NAV_ITEM].find((item) => isNavItemActive(item.path, pathname));
 
   return (
     <div

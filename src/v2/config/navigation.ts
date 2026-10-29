@@ -2,7 +2,7 @@
 // Platform navigation — single source of truth for the nav rail.
 // ============================================================================
 
-import { Database, FlaskConical, Home, Info, NotebookPen, Radio } from 'lucide-react';
+import { Database, FlaskConical, Home, Info, MessageSquareText, NotebookPen, Radio } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { NOTEBOOKS_ENABLED } from './featureFlags';
 import { FEEDBACK_PREVIEW_MODE } from './feedbackPreview';
@@ -73,3 +73,13 @@ export function isNavItemActive(itemPath: string, currentPath: string): boolean 
   }
   return currentPath === itemPath || currentPath.startsWith(`${itemPath}/`);
 }
+
+/** The feedback page. Pinned to the bottom of the nav rail, apart from the section list above it. */
+export const FEEDBACK_PATH = '/feedback';
+
+export const FEEDBACK_NAV_ITEM: PlatformNavItem = {
+  path: FEEDBACK_PATH,
+  label: 'Feedback',
+  shortLabel: 'Feedback',
+  icon: MessageSquareText,
+};
