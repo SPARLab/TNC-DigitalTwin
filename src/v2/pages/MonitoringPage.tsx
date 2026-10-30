@@ -77,7 +77,6 @@ import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { createPreserveOutlineLayer } from '../components/Monitoring/internal/boundaryOutlineLayer';
 import { formatObservedAt } from '../components/Monitoring/internal/formatObservedAt';
 import { AlertsPanel } from '../components/Monitoring/AlertsPanel';
-import { BetaNoticeBanner } from '../components/shared/BetaNoticeBanner';
 import { allowsInterpolation, SENSOR_VARIABLES } from '../services/sensorService';
 import type { SensorVariableId } from '../services/sensorService';
 import { formatStationDisplayName } from '../services/dendraStationService';
@@ -262,15 +261,15 @@ function SensorRow({ sensor, isActive, isLoading, onToggle }: SensorRowProps) {
       )}
 
       <span
-        className={`flex-1 truncate text-xs ${
+        className={`flex-1 truncate text-sm ${
           isActive ? 'font-semibold text-emerald-900' : 'text-gray-700'
         }`}
       >
         {sensor.name}
       </span>
-      <span className="text-[10px] text-gray-400">{sensor.unit}</span>
+      <span className="text-xs text-gray-400">{sensor.unit}</span>
       <span
-        className={`rounded px-1 py-px text-[9px] font-semibold uppercase tracking-wide ${
+        className={`rounded px-1 py-px text-[10px] font-semibold uppercase tracking-wide ${
           isConnected ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'
         }`}
       >
@@ -310,10 +309,10 @@ function SensorSectionGroup({
           }`}
         />
         <SectionIcon className="h-3.5 w-3.5 flex-shrink-0 text-gray-500" />
-        <span className="flex-1 truncate text-xs font-semibold text-gray-800">
+        <span className="flex-1 truncate text-sm font-semibold text-gray-800">
           {section.name}
         </span>
-        <span className="text-[10px] font-medium text-gray-400">
+        <span className="text-xs font-medium text-gray-400">
           {section.sensors.length}
         </span>
       </button>
@@ -1106,7 +1105,6 @@ export function MonitoringPage() {
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
-      <BetaNoticeBanner />
     <div id="monitoring-page" className="flex min-h-0 flex-1 overflow-hidden bg-gray-50">
       <ResizablePanel
         side="left"

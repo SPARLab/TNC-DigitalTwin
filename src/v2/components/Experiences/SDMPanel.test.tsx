@@ -82,6 +82,15 @@ describe('SDMPanel wizard', () => {
     expect(screen.getByText(/how a run works/i)).toBeTruthy();
   });
 
+  it('says on the overview and in the pop-up that the tool is in beta', () => {
+    renderPanel();
+    expect(screen.getByRole('note').textContent).toMatch(/beta/i);
+    expect(screen.getByRole('note').textContent).toMatch(/feedback/i);
+
+    click(/how does this model work/i);
+    expect(screen.getAllByRole('note')).toHaveLength(2);
+  });
+
   it('keeps the detailed explanation in a pop-up', () => {
     renderPanel();
     expect(screen.queryByRole('dialog')).toBeNull();

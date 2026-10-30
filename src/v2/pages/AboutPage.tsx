@@ -2,14 +2,15 @@
 // AboutPage — preserve introduction, contact, and team.
 // ============================================================================
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Check, Mail } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { Mail, MessageSquareText } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { FEEDBACK_PATH } from '../config/navigation';
 import {
   ABOUT_HERO_IMAGE,
   ABOUT_PARAGRAPHS,
   CONTACT_TOPICS,
   TEAM_MEMBERS,
-  contactEmail,
   initialsFor,
 } from './aboutContent';
 
@@ -116,69 +117,30 @@ function ContactSidebar() {
       </dl>
 
       <div className="mt-5 border-t border-gray-100 pt-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 xl:text-sm">Email</p>
-        <CopyEmailButton />
-      </div>    </aside>
+        <p className="text-sm leading-relaxed text-gray-600 xl:text-base">
+          Send us a message with the form on the Feedback page.
+        </p>
+        <FeedbackButton />
+      </div>
+    </aside>
   );
 }
 
-type CopyStatus = 'idle' | 'copied' | 'blocked';
-
-/**
- * Copies the team address to the clipboard. The address is not rendered until
- * copying is blocked (for example on a non-secure page), so scrapers reading the
- * page text do not find it.
- */
-function CopyEmailButton() {
-  const [status, setStatus] = useState<CopyStatus>('idle');
-  const [address, setAddress] = useState('');
-  const resetTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  useEffect(() => () => clearTimeout(resetTimer.current), []);
-
-  if (!contactEmail()) {
-    return (
-      <p id="about-contact-email" className="mt-1 text-sm text-gray-600 xl:text-base">
-        The team inbox will be listed here soon.
-      </p>
-    );
-  }
-
-  async function copy() {
-    const email = contactEmail();
-    clearTimeout(resetTimer.current);
-    try {
-      await navigator.clipboard.writeText(email);
-      setStatus('copied');
-      resetTimer.current = setTimeout(() => setStatus('idle'), 2500);
-    } catch {
-      setAddress(email);
-      setStatus('blocked');
-    }
-  }
-
-  const copied = status === 'copied';
+/** Opens the Feedback page, the same one as the Feedback item in the nav rail. */
+function FeedbackButton() {
+  const navigate = useNavigate();
+  const location = useLocation();
 
   return (
-    <div className="mt-2">
-      <button
-        id="about-contact-email"
-        type="button"
-        onClick={copy}
-        className="inline-flex items-center gap-2 rounded-button border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-emerald-800 transition-colors hover:border-emerald-300 hover:bg-emerald-50 xl:text-base 2xl:text-lg"
-      >
-        {copied ? <Check className="h-4 w-4 shrink-0" aria-hidden /> : <Mail className="h-4 w-4 shrink-0" aria-hidden />}
-        {copied ? 'Email copied' : 'Copy email address'}
-      </button>
-      <p role="status" className="mt-2 text-sm text-gray-600 xl:text-base">
-        {status === 'blocked' && (
-          <>
-            Copying was blocked by your browser. Our address is{' '}
-            <span className="select-all break-all font-medium text-gray-900">{address}</span>.
-          </>
-        )}
-      </p>
-    </div>
+    <button
+      id="about-contact-feedback"
+      type="button"
+      onClick={() => navigate(FEEDBACK_PATH, { state: { from: location.pathname } })}
+      className="mt-3 inline-flex items-center gap-2 rounded-button bg-emerald-700 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-800 xl:text-base 2xl:text-lg"
+    >
+      <MessageSquareText className="h-4 w-4 shrink-0" aria-hidden />
+      Go to the feedback form
+    </button>
   );
 }
 

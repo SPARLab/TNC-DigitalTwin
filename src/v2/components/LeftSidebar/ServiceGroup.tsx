@@ -161,7 +161,7 @@ export function ServiceGroup({
   };
 
   return (
-    <div id={`service-group-${service.id}`} className="space-y-1">
+    <div id={`service-group-${service.id}`}>
       <div
         id={`service-group-row-${service.id}`}
         role="treeitem"
@@ -173,17 +173,17 @@ export function ServiceGroup({
         tabIndex={0}
         onClick={handleRowClick}
         onKeyDown={handleHeaderKeyDown}
-        className={`group min-w-0 flex items-center gap-1.5 py-2 px-3 ml-1 mr-1 cursor-pointer
-                    text-sm rounded-lg transition-all duration-200
+        className={`group min-w-0 flex items-center gap-2 py-1.5 pl-9 pr-3 cursor-pointer
+                    text-sm transition-colors
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1
                     ${
                       isActiveService
-                        ? 'bg-amber-50 border border-amber-300 font-semibold text-gray-900 shadow-sm'
+                        ? 'bg-amber-50 font-semibold text-gray-900 hover:bg-amber-100 shadow-[inset_2px_0_0_0_#fbbf24]'
                         : hasActiveSublayer
-                          ? 'bg-amber-50/70 border border-amber-200 text-gray-900'
+                          ? 'bg-amber-50/60 text-gray-900 hover:bg-amber-50'
                           : isExpanded
-                            ? 'bg-slate-50 border border-slate-300 text-gray-900 hover:border-gray-400'
-                            : 'bg-white border border-gray-200 text-gray-700 hover:border-gray-400 hover:shadow-sm'
+                            ? 'text-gray-900 hover:bg-gray-50'
+                            : 'text-gray-700 hover:bg-gray-50'
                     }`}
       >
         <span
@@ -213,7 +213,7 @@ export function ServiceGroup({
       <div
         id={childrenGroupId}
         role="group"
-        className={`ml-2 mr-1 border border-slate-200 rounded-lg bg-slate-50/50 transition-all duration-300 ease-in-out ${
+        className={`ml-9 mr-3 border-l-2 border-gray-200 transition-all duration-300 ease-in-out ${
           isExpanded
             ? 'max-h-[min(600px,70vh)] opacity-100 mb-2 overflow-y-auto'
             : 'max-h-0 opacity-0 mb-0 border-transparent overflow-hidden'
@@ -221,11 +221,11 @@ export function ServiceGroup({
       >
         <div
           id={`service-group-summary-${service.id}`}
-          className="px-3 pt-2 pb-1 text-[11px] text-gray-600 border-b border-slate-200"
+          className="px-3 pt-1 pb-1 text-xs text-gray-500"
         >
           {summaryText}
         </div>
-        <div id={`service-group-children-inner-${service.id}`} className="py-1 space-y-1">
+        <div id={`service-group-children-inner-${service.id}`} className="pb-1">
           {layers.map((layer) => (
             <LayerRow
               key={layer.id}

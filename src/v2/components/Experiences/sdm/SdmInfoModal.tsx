@@ -3,6 +3,7 @@
 // the overview step.
 // ============================================================================
 
+import { BetaNotice } from '../BetaNotice';
 import { InfoModal } from '../InfoModal';
 import { SDM_EXPLAINER } from './sdmCopy';
 
@@ -26,6 +27,7 @@ export function SdmInfoModal({ isOpen, onClose }: SdmInfoModalProps) {
             <p className="mt-0.5 text-sm leading-relaxed text-gray-600">{section.body}</p>
           </section>
         ))}
+        <BetaNotice clickable={false} />
       </div>
     </InfoModal>
   );

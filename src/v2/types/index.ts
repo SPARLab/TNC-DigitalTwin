@@ -278,6 +278,11 @@ export interface ActiveLayer {
   isService?: boolean;
   /** Selected sub-layer for service-level activation */
   selectedSubLayerId?: string;
+  /**
+   * When true the left catalog tree does not auto-expand to this layer
+   * (used for the preserve boundary that is activated on first load).
+   */
+  skipSidebarReveal?: boolean;
 }
 
 /** Undo action record */

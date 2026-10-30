@@ -1,10 +1,10 @@
 // ============================================================================
-// LayerRow — A single layer in the left sidebar with pin/eye interactions
+// LayerRow — A single layer in the left sidebar with pin interactions
 // States: default, active, pinned-visible, pinned-hidden, active+pinned
 // ============================================================================
 
 import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { ChevronDown, ChevronRight, Eye, EyeOff, Pin } from 'lucide-react';
+import { ChevronDown, ChevronRight, Pin } from 'lucide-react';
 import { useLayers } from '../../context/LayerContext';
 import { useCatalog } from '../../context/CatalogContext';
 import { useDroneDeploy } from '../../context/DroneDeployContext';
@@ -74,7 +74,6 @@ export function LayerRow({
     isLayerVisible,
     pinLayer,
     unpinLayer,
-    toggleVisibility,
     getPinnedByLayerId,
   } = useLayers();
   const { layerMap } = useCatalog();
@@ -178,11 +177,6 @@ export function LayerRow({
     }
   };
 
-  const handleEyeClick = (e: ReactMouseEvent) => {
-    e.stopPropagation();
-    if (pinned) toggleVisibility(pinned.id);
-  };
-
   const handleProjectsExpandToggle = (e: ReactMouseEvent) => {
     e.stopPropagation();
     activateLayer(layerId);
@@ -212,13 +206,13 @@ export function LayerRow({
     warmCache();
   }, [isDroneDeployOrthomosaicsLayer, isProjectsExpanded, warmCache, projectsRequestNonce]);
 
+  // Rows are flat, like the Live Monitoring list: no boxes, a light hover, and an
+  // amber tint with a thin left bar for the layer that is open.
   const activeClasses = controlsOnly
-    ? 'bg-white border border-gray-200 hover:border-gray-400 hover:shadow-sm'
+    ? 'hover:bg-gray-50'
     : isActive
-      ? 'bg-amber-50 border border-amber-300 font-semibold text-gray-900 shadow-sm'
-      : isInactiveMeasure
-        ? 'bg-slate-50 border border-slate-200 hover:border-slate-300'
-        : 'bg-white border border-gray-200 hover:border-gray-400 hover:shadow-sm';
+      ? 'bg-amber-50 font-semibold text-gray-900 hover:bg-amber-100 shadow-[inset_2px_0_0_0_#fbbf24]'
+      : 'hover:bg-gray-50';
 
   const textColor = isInactiveMeasure && !isActive
     ? 'text-slate-500'
@@ -229,7 +223,7 @@ export function LayerRow({
         : 'text-gray-700';
 
   return (
-    <div id={`layer-row-wrapper-${layerId}`} className="space-y-1">
+    <div id={`layer-row-wrapper-${layerId}`}>
       <div
         id={`layer-row-${layerId}`}
         role="treeitem"
@@ -240,28 +234,11 @@ export function LayerRow({
         tabIndex={controlsOnly ? -1 : 0}
         onClick={handleClick}
         onKeyDown={handleRowKeyDown}
-        className={`group min-w-0 flex items-center gap-1.5 py-2 px-3 cursor-pointer
-                    text-sm rounded-lg transition-all duration-200 ${indented ? 'ml-4 mr-1' : 'ml-1 mr-1'} ${activeClasses}
+        className={`group min-w-0 flex items-center gap-2 py-1.5 pr-3 cursor-pointer
+                    text-sm transition-colors ${indented ? 'pl-5' : 'pl-9'} ${activeClasses}
                     ${controlsOnly ? 'cursor-default' : 'cursor-pointer'}
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1`}
       >
-        {isPinned && (
-          <button
-            id={`layer-eye-${layerId}`}
-            type="button"
-            onClick={handleEyeClick}
-            aria-label={isVisible ? `Hide ${name} on map` : `Show ${name} on map`}
-            title={isVisible ? 'Hide on map' : 'Show on map'}
-            className="flex-shrink-0 p-0.5 rounded hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-          >
-            {isVisible ? (
-              <Eye className="w-4 h-4 text-gray-700" />
-            ) : (
-              <EyeOff className="w-4 h-4 text-gray-300" />
-            )}
-          </button>
-        )}
-
         <span className="min-w-0 flex-1 flex flex-col gap-0.5 overflow-hidden">
           <span
             title={isInactiveMeasure ? undefined : name}
@@ -272,7 +249,7 @@ export function LayerRow({
           {isLiveMeasure && (
             <span
               id={`layer-live-tag-${layerId}`}
-              className="text-[10px] leading-none font-normal text-emerald-600/80"
+              className="text-[11px] leading-none font-normal text-emerald-600/80"
             >
               live
             </span>
@@ -280,7 +257,7 @@ export function LayerRow({
           {isInactiveMeasure && (
             <span
               id={`layer-inactive-tag-${layerId}`}
-              className="text-[10px] leading-none font-normal text-slate-400"
+              className="text-[11px] leading-none font-normal text-slate-400"
             >
               inactive
             </span>
@@ -332,7 +309,7 @@ export function LayerRow({
       {isDroneDeployOrthomosaicsLayer && (
         <div
           id={`drone-projects-panel-${layerId}`}
-          className={`ml-2 mr-1 border border-slate-200 rounded-lg bg-slate-50/50 overflow-hidden transition-all duration-300 ease-in-out ${
+          className={`ml-9 mr-3 border-l-2 border-gray-200 overflow-hidden transition-all duration-300 ease-in-out ${
             isProjectsExpanded
               ? 'max-h-[600px] opacity-100 mb-2'
               : 'max-h-0 opacity-0 mb-0 border-transparent'
@@ -368,7 +345,7 @@ export function LayerRow({
             <>
               <div
                 id={`drone-projects-summary-${layerId}`}
-                className="px-3 pt-2 pb-1 text-[11px] text-gray-600 border-b border-slate-200"
+                className="px-3 pt-1 pb-1 text-xs text-gray-500"
               >
                 {projectCount} projects, {flightCount} orthomosaics
               </div>
@@ -385,7 +362,7 @@ export function LayerRow({
                         className={`w-full flex items-center gap-1.5 px-2 py-1.5 text-left transition-colors
                           ${isSelectedProject ? 'bg-amber-100 text-gray-900' : 'hover:bg-slate-100 text-gray-800'}`}
                       >
-                        <span className="text-xs text-gray-800 break-words leading-snug line-clamp-2 min-w-0 flex-1" title={project.projectName}>
+                        <span className="text-sm text-gray-800 break-words leading-snug line-clamp-2 min-w-0 flex-1" title={project.projectName}>
                           {project.projectName}
                         </span>
                         <span className="text-[10px] text-gray-600 rounded-full bg-white px-1.5 py-0.5 border border-gray-200">

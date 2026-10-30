@@ -102,7 +102,7 @@ export const SDM_SCENARIO_STEP = {
     + 'to map today’s habitat, or a future scenario to see where suitable climate '
     + 'may move. The model is never trained on future climate.',
   multiple:
-    'Tick as many as you like. The model is trained once and applied to each, '
+    'Pick as many as you like. The model is trained once and applied to each, '
     + 'so extra climates add little time and the results can be compared '
     + 'fairly.',
   scenarios:

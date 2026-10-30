@@ -3,6 +3,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { SuitabilityIntroStep } from './SuitabilityIntroStep';
 import { SUITABILITY_DATA_EXPLAINER, WEIGHTED_OVERLAY_EXPLAINER } from './wizardCopy';
 
+describe('SuitabilityIntroStep beta note', () => {
+  it('says the tool is in beta and welcomes feedback', () => {
+    render(<SuitabilityIntroStep onStart={vi.fn()} />);
+    expect(screen.getByRole('note').textContent).toMatch(/beta/i);
+    expect(screen.getByRole('note').textContent).toMatch(/feedback/i);
+  });
+});
+
 describe('SuitabilityIntroStep data help', () => {
   it('lists the usable data in a pop-up instead of on the page', () => {
     render(<SuitabilityIntroStep onStart={vi.fn()} />);

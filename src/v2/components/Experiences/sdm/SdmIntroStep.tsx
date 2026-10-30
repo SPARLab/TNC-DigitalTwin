@@ -5,6 +5,7 @@
 
 import { useState } from 'react';
 import { ArrowRight, CircleHelp, Play, Search, SlidersHorizontal, Thermometer } from 'lucide-react';
+import { BetaNotice } from '../BetaNotice';
 import { experienceUi } from '../experienceUi';
 import { SdmInfoModal } from './SdmInfoModal';
 import { SDM_INTRO } from './sdmCopy';
@@ -23,9 +24,9 @@ export function SdmIntroStep({ onStart }: { onStart: () => void }) {
         <p className={`mt-2 ${experienceUi.description}`}>{SDM_INTRO.summary}</p>
       </div>
 
-      <section className="flex flex-col gap-2">
+      <section className="flex flex-col gap-3">
         <h4 className={experienceUi.label}>How a run works</h4>
-        <ol className="flex flex-col gap-2.5">
+        <ol className="flex flex-col gap-3.5">
           {SDM_INTRO.howItWorks.map((step, index) => {
             const Icon = STEP_ICONS[index] ?? Play;
             return (
@@ -44,14 +45,17 @@ export function SdmIntroStep({ onStart }: { onStart: () => void }) {
             );
           })}
         </ol>
-        <button
-          type="button"
-          onClick={() => setExplainerOpen(true)}
-          className="inline-flex items-center gap-1.5 self-start text-sm font-medium text-emerald-700 hover:text-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-        >
-          <CircleHelp className="h-4 w-4" />
-          {SDM_INTRO.learnMore}
-        </button>
+        <div className="mt-1 flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={() => setExplainerOpen(true)}
+            className="inline-flex items-center gap-1.5 self-start text-sm font-medium text-emerald-700 hover:text-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          >
+            <CircleHelp className="h-4 w-4" />
+            {SDM_INTRO.learnMore}
+          </button>
+          <BetaNotice />
+        </div>
       </section>
 
       <button type="button" onClick={onStart} className={experienceUi.runBtn}>

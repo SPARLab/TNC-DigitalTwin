@@ -204,7 +204,7 @@ export function LeftSidebar() {
 
   // Open every ancestor category for the active layer (Boundaries → Administrative → …).
   const forceExpandedCategoryIds = useMemo(() => {
-    if (!activeLayer) return undefined;
+    if (!activeLayer || activeLayer.skipSidebarReveal) return undefined;
     return findCategoryPathIds(
       categories,
       activeLayer.layerId,

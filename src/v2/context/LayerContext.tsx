@@ -34,6 +34,7 @@ interface LayerContextValue {
     viewId?: string,
     featureId?: string | number,
     selectedSubLayerId?: string,
+    options?: { skipSidebarReveal?: boolean },
   ) => void;
   setActiveServiceSubLayer: (layerId: string) => void;
   deactivateLayer: () => void;
@@ -186,6 +187,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     viewId?: string,
     featureId?: string | number,
     selectedSubLayerId?: string,
+    options?: { skipSidebarReveal?: boolean },
   ) => {
     const layer = layerMap.get(layerId);
     if (!layer) return;
@@ -216,6 +218,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       featureId: resolvedFeatureId,
       isService,
       selectedSubLayerId: resolvedSubLayerId,
+      ...(options?.skipSidebarReveal ? { skipSidebarReveal: true } : {}),
     });
 
     // DFT-001: clicking a pinned-but-hidden layer restores visibility

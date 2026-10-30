@@ -1,11 +1,29 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { AboutPage } from './AboutPage';
+
+function Where() {
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from ?? 'nowhere';
+  return <p data-testid="where">{`${location.pathname} from ${from}`}</p>;
+}
+
+function renderAbout() {
+  return render(
+    <MemoryRouter initialEntries={['/about']}>
+      <Routes>
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="*" element={<Where />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
 
 describe('AboutPage', () => {
   it('shows the description, team, and contact sidebar', () => {
-    render(<AboutPage />);
+    renderAbout();
 
     expect(
       screen.getByRole('heading', { name: 'Dangermond Preserve Digital Twin' }),
@@ -22,39 +40,28 @@ describe('AboutPage', () => {
     expect(contact).toHaveTextContent('Functionality & data requests');
   });
 
-  it('copies the team email without printing it on the page', async () => {
+  it('sends visitors to the feedback form instead of listing an email address', async () => {
     const user = userEvent.setup();
-    const { container } = render(<AboutPage />);
+    const { container } = renderAbout();
 
-    expect(container.innerHTML).not.toContain('spatial-admin@ucsb.edu');
+    expect(container.innerHTML).not.toContain('@ucsb.edu');
     expect(screen.queryByRole('link', { name: /@/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /copy email/i })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Copy email address' }));
+    await user.click(screen.getByRole('button', { name: 'Go to the feedback form' }));
 
-    expect(await navigator.clipboard.readText()).toBe('spatial-admin@ucsb.edu');
-    expect(screen.getByRole('button', { name: 'Email copied' })).toBeInTheDocument();
-    expect(container.innerHTML).not.toContain('spatial-admin@ucsb.edu');
-  });
-
-  it('shows the address when the browser blocks copying', async () => {
-    const user = userEvent.setup();
-    render(<AboutPage />);
-    vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValueOnce(new Error('denied'));
-
-    await user.click(screen.getByRole('button', { name: 'Copy email address' }));
-
-    expect(await screen.findByText('spatial-admin@ucsb.edu')).toBeInTheDocument();
+    expect(screen.getByTestId('where').textContent).toBe('/feedback from /about');
   });
 
   it('no longer offers a contact form', () => {
-    render(<AboutPage />);
+    renderAbout();
 
     expect(screen.queryByRole('button', { name: 'Send message' })).not.toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 
   it('gives the two section headings the same size', () => {
-    render(<AboutPage />);
+    renderAbout();
 
     const about = screen.getByRole('heading', { name: 'About the platform' });
     const team = screen.getByRole('heading', { name: 'Our team' });
