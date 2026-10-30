@@ -286,7 +286,7 @@ export function LeftSidebar() {
           {scrollThumbHeight > 0 && (
             <div
               id="left-sidebar-scrollbar-overlay"
-              className="pointer-events-none absolute inset-y-1 right-0.5 w-2"
+              className="pointer-events-none absolute inset-y-1 right-0.5 z-30 w-2"
             >
               <div
                 id="left-sidebar-scrollbar-thumb"
