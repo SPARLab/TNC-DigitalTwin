@@ -4,19 +4,6 @@
 // '/people/amy_frazier.jpg'). A member without a photo shows initials.
 // ============================================================================
 
-/**
- * Inbox for the contact sidebar. The address is kept as two parts and only joined
- * when a visitor clicks the copy button, so it never appears as plain text in the
- * page or the JavaScript bundle where simple email scrapers would find it.
- * Leave either part blank to show a placeholder instead.
- */
-export const ABOUT_CONTACT_EMAIL_PARTS = ['spatial-admin', 'ucsb.edu'] as const;
-
-export function contactEmail(): string {
-  const [user, domain] = ABOUT_CONTACT_EMAIL_PARTS;
-  return user && domain ? `${user}@${domain}` : '';
-}
-
 export const ABOUT_HERO_IMAGE = '/landing.jpg';
 
 export const ABOUT_PARAGRAPHS = [

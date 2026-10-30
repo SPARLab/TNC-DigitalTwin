@@ -131,7 +131,7 @@ export function SdmDownloadDialog({
               Download results
             </h2>
             <p className="mt-1 text-xs leading-relaxed text-gray-500">
-              Tick the model runs and analyses to save. They download together as one zip.
+              Pick the model runs and analyses to save. They download together as one zip.
             </p>
           </div>
           <button

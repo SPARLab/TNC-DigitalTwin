@@ -77,7 +77,6 @@ import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { createPreserveOutlineLayer } from '../components/Monitoring/internal/boundaryOutlineLayer';
 import { formatObservedAt } from '../components/Monitoring/internal/formatObservedAt';
 import { AlertsPanel } from '../components/Monitoring/AlertsPanel';
-import { BetaNoticeBanner } from '../components/shared/BetaNoticeBanner';
 import { allowsInterpolation, SENSOR_VARIABLES } from '../services/sensorService';
 import type { SensorVariableId } from '../services/sensorService';
 import { formatStationDisplayName } from '../services/dendraStationService';
@@ -1106,7 +1105,6 @@ export function MonitoringPage() {
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
-      <BetaNoticeBanner />
     <div id="monitoring-page" className="flex min-h-0 flex-1 overflow-hidden bg-gray-50">
       <ResizablePanel
         side="left"

@@ -5,6 +5,7 @@
 
 import { useState } from 'react';
 import { ArrowRight, CircleHelp, Play, Search, SlidersHorizontal, Thermometer } from 'lucide-react';
+import { BetaNotice } from '../BetaNotice';
 import { experienceUi } from '../experienceUi';
 import { SdmInfoModal } from './SdmInfoModal';
 import { SDM_INTRO } from './sdmCopy';
@@ -52,6 +53,7 @@ export function SdmIntroStep({ onStart }: { onStart: () => void }) {
           <CircleHelp className="h-4 w-4" />
           {SDM_INTRO.learnMore}
         </button>
+        <BetaNotice />
       </section>
 
       <button type="button" onClick={onStart} className={experienceUi.runBtn}>
