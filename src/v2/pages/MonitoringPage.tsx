@@ -261,15 +261,15 @@ function SensorRow({ sensor, isActive, isLoading, onToggle }: SensorRowProps) {
       )}
 
       <span
-        className={`flex-1 truncate text-xs ${
+        className={`flex-1 truncate text-sm ${
           isActive ? 'font-semibold text-emerald-900' : 'text-gray-700'
         }`}
       >
         {sensor.name}
       </span>
-      <span className="text-[10px] text-gray-400">{sensor.unit}</span>
+      <span className="text-xs text-gray-400">{sensor.unit}</span>
       <span
-        className={`rounded px-1 py-px text-[9px] font-semibold uppercase tracking-wide ${
+        className={`rounded px-1 py-px text-[10px] font-semibold uppercase tracking-wide ${
           isConnected ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'
         }`}
       >
@@ -309,10 +309,10 @@ function SensorSectionGroup({
           }`}
         />
         <SectionIcon className="h-3.5 w-3.5 flex-shrink-0 text-gray-500" />
-        <span className="flex-1 truncate text-xs font-semibold text-gray-800">
+        <span className="flex-1 truncate text-sm font-semibold text-gray-800">
           {section.name}
         </span>
-        <span className="text-[10px] font-medium text-gray-400">
+        <span className="text-xs font-medium text-gray-400">
           {section.sensors.length}
         </span>
       </button>

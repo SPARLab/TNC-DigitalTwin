@@ -5,6 +5,7 @@
 
 import { useState } from 'react';
 import { ArrowRight, CircleHelp, Layers, Map, Scale } from 'lucide-react';
+import { BetaNotice } from '../BetaNotice';
 import { experienceUi } from '../experienceUi';
 import { SuitabilityDataModal } from './SuitabilityDataModal';
 import { WeightedOverlayInfoModal } from './WeightedOverlayInfoModal';
@@ -33,9 +34,9 @@ export function SuitabilityIntroStep({ onStart }: SuitabilityIntroStepProps) {
         </ul>
       </div>
 
-      <section className="flex flex-col gap-2">
+      <section className="flex flex-col gap-3">
         <h4 className={experienceUi.label}>How a run works</h4>
-        <ol className="flex flex-col gap-2.5">
+        <ol className="flex flex-col gap-3.5">
           {SUITABILITY_INTRO.howItWorks.map((step, index) => {
             const Icon = index === 0 ? Map : index === 1 ? Layers : Scale;
             return (
@@ -62,14 +63,17 @@ export function SuitabilityIntroStep({ onStart }: SuitabilityIntroStepProps) {
             );
           })}
         </ol>
-        <button
-          type="button"
-          onClick={() => setDataOpen(true)}
-          className="inline-flex items-center gap-1.5 self-start text-sm font-medium text-emerald-700 hover:text-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-        >
-          <CircleHelp className="h-4 w-4" />
-          {SUITABILITY_INTRO.dataLink}
-        </button>
+        <div className="mt-1 flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={() => setDataOpen(true)}
+            className="inline-flex items-center gap-1.5 self-start text-sm font-medium text-emerald-700 hover:text-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          >
+            <CircleHelp className="h-4 w-4" />
+            {SUITABILITY_INTRO.dataLink}
+          </button>
+          <BetaNotice />
+        </div>
       </section>
 
       <button type="button" onClick={onStart} className={experienceUi.runBtn}>
