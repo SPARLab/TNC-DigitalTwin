@@ -7,7 +7,7 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import { useLocation } from 'react-router-dom';
-import { CheckCircle2, Send } from 'lucide-react';
+import { CheckCircle2, Send, X } from 'lucide-react';
 import { FEEDBACK_PATH, PLATFORM_NAV_ITEMS, isNavItemActive } from '../config/navigation';
 import {
   MAX_ATTACHMENTS,
@@ -49,6 +49,20 @@ export function FeedbackPage() {
 
   const sectionLabel = describeSection(cameFrom);
   const attachmentProblem = describeAttachmentProblem(files);
+
+  const fileKey = (file: File) => `${file.name}-${file.size}-${file.lastModified}`;
+
+  // New picks add to the list; a file already listed is not added twice.
+  const addFiles = (picked: File[]) => {
+    setFiles((current) => {
+      const known = new Set(current.map(fileKey));
+      return [...current, ...picked.filter((file) => !known.has(fileKey(file)))];
+    });
+  };
+
+  const removeFile = (target: File) => {
+    setFiles((current) => current.filter((file) => file !== target));
+  };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -137,18 +151,41 @@ export function FeedbackPage() {
                 (optional; up to {MAX_ATTACHMENTS} files, {formatMegabytes(3 * 1024 * 1024)} total)
               </span>
             </label>
+            {/* The native input is only an "add files" trigger; the list below is the single source of truth. */}
             <input
               id="feedback-files"
               type="file"
               multiple
-              onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
-              className="mt-1 block w-full cursor-pointer text-sm text-gray-700 file:mr-3 file:cursor-pointer file:rounded-button file:border file:border-gray-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-800 hover:file:bg-gray-100"
+              onChange={(event) => {
+                addFiles(Array.from(event.target.files ?? []));
+                event.target.value = '';
+              }}
+              className="peer sr-only"
             />
+            <label
+              htmlFor="feedback-files"
+              className="mt-1 inline-block cursor-pointer rounded-button border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 hover:bg-gray-100 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-emerald-600"
+            >
+              {files.length > 0 ? 'Add more files' : 'Choose files'}
+            </label>
             {files.length > 0 && (
               <ul className="mt-2 space-y-1 text-sm text-gray-700">
                 {files.map((file) => (
-                  <li key={`${file.name}-${file.size}-${file.lastModified}`}>
-                    {file.name} ({formatMegabytes(file.size)})
+                  <li
+                    key={`${file.name}-${file.size}-${file.lastModified}`}
+                    className="flex items-center justify-between gap-2 rounded-button border border-gray-200 bg-white px-3 py-1.5"
+                  >
+                    <span className="min-w-0 truncate">
+                      {file.name} ({formatMegabytes(file.size)})
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(file)}
+                      aria-label={`Remove attachment ${file.name}`}
+                      className="shrink-0 rounded-full p-1 text-red-600 hover:bg-red-50 hover:text-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-600"
+                    >
+                      <X className="h-4 w-4" aria-hidden />
+                    </button>
                   </li>
                 ))}
               </ul>
