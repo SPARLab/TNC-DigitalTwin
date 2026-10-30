@@ -79,7 +79,7 @@ export const FEEDBACK_PATH = '/feedback';
 
 export const FEEDBACK_NAV_ITEM: PlatformNavItem = {
   path: FEEDBACK_PATH,
-  label: 'Feedback',
-  shortLabel: 'Feedback',
+  label: 'Contact',
+  shortLabel: 'Contact',
   icon: MessageSquareText,
 };
