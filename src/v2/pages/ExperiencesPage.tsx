@@ -21,6 +21,10 @@ import { StandaloneExperienceWorkspace } from '../components/Experiences/Standal
 import { UnderConstructionPanel } from '../components/shared/UnderConstructionPanel';
 import { FEEDBACK_PREVIEW_MODE } from '../config/feedbackPreview';
 
+// The type, category and real-time filters are off while there are only a few
+// experiences. Set this to true to bring them back; the filtering is still wired.
+const SHOW_FILTERS = false;
+
 const KIND_OPTIONS = [
   { value: '', label: 'All Types' },
   { value: 'model', label: 'Models' },
@@ -183,48 +187,50 @@ function ExperienceGallery() {
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            <select
-              id="experiences-kind-filter"
-              aria-label="Filter by type"
-              value={kindFilter}
-              onChange={(event) => setKindFilter(event.target.value)}
-              className="rounded-button border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-800 focus:border-emerald-500 focus:outline-none"
-            >
-              {KIND_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+          {SHOW_FILTERS && (
+            <div className="flex flex-wrap items-center gap-2.5">
+              <select
+                id="experiences-kind-filter"
+                aria-label="Filter by type"
+                value={kindFilter}
+                onChange={(event) => setKindFilter(event.target.value)}
+                className="rounded-button border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-800 focus:border-emerald-500 focus:outline-none"
+              >
+                {KIND_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
 
-            <select
-              id="experiences-category-filter"
-              aria-label="Filter by category"
-              value={categoryFilter}
-              onChange={(event) => setCategoryFilter(event.target.value)}
-              className="rounded-button border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-800 focus:border-emerald-500 focus:outline-none"
-            >
-              <option value="">All Categories</option>
-              {EXPERIENCE_CATEGORIES.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.label}
-                </option>
-              ))}
-            </select>
+              <select
+                id="experiences-category-filter"
+                aria-label="Filter by category"
+                value={categoryFilter}
+                onChange={(event) => setCategoryFilter(event.target.value)}
+                className="rounded-button border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-800 focus:border-emerald-500 focus:outline-none"
+              >
+                <option value="">All Categories</option>
+                {EXPERIENCE_CATEGORIES.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.label}
+                  </option>
+                ))}
+              </select>
 
-            <label className="flex cursor-pointer items-center gap-1.5 rounded-button border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-600 transition-colors hover:border-emerald-400 hover:text-gray-800">
-              <input
-                id="experiences-realtime-filter"
-                type="checkbox"
-                checked={realTimeOnly}
-                onChange={(event) => setRealTimeOnly(event.target.checked)}
-                className="h-3.5 w-3.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-              />
-              <Radio className="h-3.5 w-3.5" />
-              Real-time Data
-            </label>
-          </div>
+              <label className="flex cursor-pointer items-center gap-1.5 rounded-button border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-600 transition-colors hover:border-emerald-400 hover:text-gray-800">
+                <input
+                  id="experiences-realtime-filter"
+                  type="checkbox"
+                  checked={realTimeOnly}
+                  onChange={(event) => setRealTimeOnly(event.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                <Radio className="h-3.5 w-3.5" />
+                Real-time Data
+              </label>
+            </div>
+          )}
         </div>
 
         {hasActiveFilters ? (

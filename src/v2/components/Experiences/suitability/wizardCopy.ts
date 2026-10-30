@@ -7,27 +7,48 @@ import type { RasterScope } from '../types';
 export const SUITABILITY_INTRO = {
   headline: 'Suitability Modeler',
   summary:
-    'Score how well places meet a set of criteria by combining environmental '
-    + 'rasters into one weighted suitability surface. Use it when you need a '
-    + 'transparent, map-based ranking rather than a black-box prediction.',
-  examples:
-    'Example uses include habitat or restoration siting, where slope, soils, '
-    + 'land cover, and climate layers highlight areas that match a species’ or '
-    + 'project’s requirements; or planning where to place new sensors, where '
-    + 'terrain, hydrology, land cover, and access constraints help shortlist '
-    + 'feasible locations.',
-  dataOverview:
-    'Analysis layers come from the Digital Twin raster catalog: elevation and '
-    + 'terrain derivatives, soils (SSURGO), land cover, species-richness surfaces, '
-    + 'and CHELSA bioclimate stacks. Each product is templated for one or more '
-    + 'extents and cell sizes — not every layer exists everywhere at every '
-    + 'resolution.',
+    'Want to find the suitable areas for conservation management, research or '
+    + 'restoration? Map suitable areas using environmental layers from our data '
+    + 'catalog to answer the questions you have. Each layer is scored and '
+    + 'blended into one map that rates every spot from least to most suitable.',
+  examplesLead: 'It can help answer questions like:',
+  examples: [
+    'Where is the best place to put field instruments or focus invasive species removal?',
+    'Where are flooding or fire most likely to occur?',
+    'How might the landscape change, such as habitat connectivity or where a species lives?',
+  ],
+  dataLink: 'What data can you use?',
   howItWorks: [
     'Choose an analysis extent and a shared grid resolution.',
     'Select the raster layers that represent your criteria.',
     'Set a suitability scale, weights, and reclassification rules per layer.',
     'Run a weighted overlay: each cell becomes Σ(weight × score) / Σ(weights).',
   ],
+} as const;
+
+/**
+ * The layers a run can use, shown in a pop-up rather than on the intro. The
+ * extents and cell sizes in it are read from EXTENT_GUIDE, so they follow the
+ * published grids.
+ */
+export const SUITABILITY_DATA_EXPLAINER = {
+  title: 'What data can you use?',
+  intro:
+    'Layers come from the raster datasets in our data catalog. Pick an area '
+    + 'and a cell size, and the layers made for that grid can be combined.',
+  categoriesTitle: 'Data categories',
+  categoriesBody: 'The catalog covers broad groups of data, and more are added over time.',
+  categories: ['Terrain', 'Soils', 'Land cover', 'Climate', 'Biodiversity'],
+  extentsTitle: 'Areas and cell sizes',
+  extentsBody:
+    'Each layer is prepared for one or more areas, and for each area at one '
+    + 'or more cell sizes. The cell size is how big one square of the map is: '
+    + 'smaller cells show more local detail, larger cells run faster.',
+  extentsNote:
+    'You choose one area and one cell size for the whole run. A layer is used '
+    + 'at that cell size, and a layer made for a larger area is cut down to '
+    + 'fit. A layer made only for a smaller area can\u2019t be stretched, so '
+    + 'it is greyed out in the list.',
 } as const;
 
 /**

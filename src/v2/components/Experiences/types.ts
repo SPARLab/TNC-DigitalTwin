@@ -451,7 +451,12 @@ export interface OccurrenceFeature {
 }
 
 export interface PointsAction {
-  action: 'add' | 'remove';
+  /**
+   * `release` means the species was let go in the picker. The workspace turns it
+   * into `hide` when the species has runs, so its records stay in the layer
+   * list, and into `remove` when it has none.
+   */
+  action: 'add' | 'remove' | 'hide' | 'release';
   species: string;
   features?: OccurrenceFeature[];
 }

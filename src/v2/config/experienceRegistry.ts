@@ -76,30 +76,30 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     id: 'suitability',
     name: 'Suitability Modeler',
     description:
-      'Run a weighted raster overlay across catalog layers with custom ' +
-      'reclassification rules to score habitat or siting suitability.',
+      'Map suitable areas for conservation management, research or restoration ' +
+      'using environmental layers from our data catalog.',
     icon: Layers,
     categoryId: 'general',
     kind: 'model',
     usesRealTimeData: false,
     comingSoon: false,
-    image: DEFAULT_THUMBNAIL,
+    image: '/experience-thumbnails/suitability-modeler.jpg',
     mapCenter: PRESERVE_CENTER,
     mapZoom: 13,
     panel: 'suitability',
   },
   {
     id: 'sdm',
-    name: 'Species Distribution Model',
+    name: 'Where Will Species Be in the Future?',
     description:
-      'Fit a Random Forest distribution model from occurrence records and ' +
-      'environmental predictors, including future climate scenarios.',
+      'Choose a terrestrial species and see where it may be found across Santa Barbara, San Luis Obispo and Ventura Counties as the climate changes, ' +
+      'under today’s climate or future scenarios.',
     icon: Sprout,
     categoryId: 'biodiversity',
     kind: 'model',
     usesRealTimeData: false,
     comingSoon: false,
-    image: DEFAULT_THUMBNAIL,
+    image: '/experience-thumbnails/sdm.jpg',
     mapCenter: PRESERVE_CENTER,
     mapZoom: 10,
     panel: 'sdm',

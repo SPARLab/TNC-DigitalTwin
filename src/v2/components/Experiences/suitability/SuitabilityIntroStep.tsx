@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { ArrowRight, CircleHelp, Layers, Map, Scale } from 'lucide-react';
 import { experienceUi } from '../experienceUi';
+import { SuitabilityDataModal } from './SuitabilityDataModal';
 import { WeightedOverlayInfoModal } from './WeightedOverlayInfoModal';
 import { SUITABILITY_INTRO } from './wizardCopy';
 
@@ -15,21 +16,22 @@ interface SuitabilityIntroStepProps {
 
 export function SuitabilityIntroStep({ onStart }: SuitabilityIntroStepProps) {
   const [explainerOpen, setExplainerOpen] = useState(false);
+  const [dataOpen, setDataOpen] = useState(false);
 
   return (
     <div className="flex flex-col gap-5">
       <WeightedOverlayInfoModal isOpen={explainerOpen} onClose={() => setExplainerOpen(false)} />
+      <SuitabilityDataModal isOpen={dataOpen} onClose={() => setDataOpen(false)} />
       <div>
         <h3 className={experienceUi.heading}>{SUITABILITY_INTRO.headline}</h3>
-        <p className={`mt-2 ${experienceUi.description}`}>
-          {SUITABILITY_INTRO.summary} {SUITABILITY_INTRO.examples}
-        </p>
+        <p className={`mt-2 ${experienceUi.description}`}>{SUITABILITY_INTRO.summary}</p>
+        <p className={`mt-2 ${experienceUi.description}`}>{SUITABILITY_INTRO.examplesLead}</p>
+        <ul className={`mt-1 list-disc space-y-1 pl-5 ${experienceUi.description}`}>
+          {SUITABILITY_INTRO.examples.map((example) => (
+            <li key={example}>{example}</li>
+          ))}
+        </ul>
       </div>
-
-      <section className="flex flex-col gap-2">
-        <h4 className={experienceUi.label}>What data can you use?</h4>
-        <p className={experienceUi.description}>{SUITABILITY_INTRO.dataOverview}</p>
-      </section>
 
       <section className="flex flex-col gap-2">
         <h4 className={experienceUi.label}>How a run works</h4>
@@ -60,6 +62,14 @@ export function SuitabilityIntroStep({ onStart }: SuitabilityIntroStepProps) {
             );
           })}
         </ol>
+        <button
+          type="button"
+          onClick={() => setDataOpen(true)}
+          className="inline-flex items-center gap-1.5 self-start text-sm font-medium text-emerald-700 hover:text-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+        >
+          <CircleHelp className="h-4 w-4" />
+          {SUITABILITY_INTRO.dataLink}
+        </button>
       </section>
 
       <button type="button" onClick={onStart} className={experienceUi.runBtn}>

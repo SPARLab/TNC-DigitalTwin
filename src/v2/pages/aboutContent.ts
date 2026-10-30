@@ -63,19 +63,19 @@ export const TEAM_MEMBERS: TeamMember[] = [
     id: 'trisalyn-nelson',
     name: 'Trisalyn Nelson',
     photoSrc: '/people/trisalyn_nelson.jpg',
-    bio: 'Trisalyn Nelson is a Professor and the Jack and Laura Dangermond Chair of Geography at the University of California, Santa Barbara. She is also Director for the Center of Spatial Science at UCSB.',
+    bio: 'Trisalyn Nelson is a Professor and the Jack and Laura Dangermond Chair of Geography at the University of California, Santa Barbara. She is also Director for the Center for Spatial Science at UC Santa Barbara.',
   },
   {
     id: 'will-overbye-thompson',
     name: 'Will Overbye-Thompson',
     photoSrc: '/people/will_overbye_thompson.jpg',
-    bio: 'Will Overbye-Thompson is a GIS Researcher at the University of California, Santa Barbara and a GIS Developer with the Center of Spatial Science.',
+    bio: 'Will Overbye-Thompson is a GIS Researcher at the University of California, Santa Barbara and a GIS Developer with the Center for Spatial Science.',
   },
   {
     id: 'dan-willett',
     name: 'Dan Willett',
     photoSrc: '/people/dan_willett.jpeg',
-    bio: 'Dan Willett is a PhD Student at the University of California, Santa Barbara and a GIS Developer with the Center of Spatial Science.',
+    bio: 'Dan Willett is a PhD Student at the University of California, Santa Barbara and a GIS Developer with the Center for Spatial Science.',
   },
   {
     id: 'sophia-leiker',
