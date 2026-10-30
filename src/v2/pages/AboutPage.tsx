@@ -60,7 +60,7 @@ export function AboutPage() {
             />
             <img
               src="/spatial.png"
-              alt="UCSB Spatial Center"
+              alt="UC Santa Barbara Spatial Center"
               className="h-10 w-auto object-contain [filter:drop-shadow(0_1px_4px_rgba(0,0,0,0.45))]"
             />
           </div>
@@ -187,7 +187,7 @@ function TeamSection() {
     <section id="about-team">
       <SectionHeading>Our team</SectionHeading>
       <p className="mt-4 max-w-2xl text-sm text-gray-600 xl:text-base 2xl:max-w-3xl 2xl:text-lg">
-        The Nature Conservancy’s Point Conception Institute and the Center for Spatial Science at UCSB.
+        The Center for Spatial Science at UC Santa Barbara and The Nature Conservancy’s Point Conception Institute.
       </p>
 
       <ul className="mt-6 grid auto-rows-fr gap-5 2xl:grid-cols-2">
@@ -195,7 +195,9 @@ function TeamSection() {
           <li
             key={member.id}
             id={`about-team-${member.id}`}
-            className="flex items-center gap-5 rounded-card border border-gray-200 bg-white p-5 2xl:gap-6"
+            // The text keeps a minimum width of about 19.5rem, so once the card is
+            // narrower than roughly 500px it drops under the photo instead of squeezing.
+            className="flex flex-wrap items-center justify-center gap-x-5 gap-y-4 rounded-card border border-gray-200 bg-white p-5 2xl:gap-x-6"
           >
             <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-100 text-3xl font-semibold text-emerald-900 xl:h-40 xl:w-40 xl:text-4xl 2xl:h-48 2xl:w-48 2xl:text-5xl">
               {member.photoSrc ? (
@@ -204,7 +206,7 @@ function TeamSection() {
                 <span aria-hidden="true">{initialsFor(member.name)}</span>
               )}
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1 basis-[19.5rem]">
               <h3 className="text-sm font-semibold text-gray-900 xl:text-base 2xl:text-lg">{member.name}</h3>
               <p className="mt-1 text-sm leading-relaxed text-gray-600 xl:text-base 2xl:text-lg">{member.bio}</p>
             </div>
