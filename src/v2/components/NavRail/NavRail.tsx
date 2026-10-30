@@ -116,7 +116,7 @@ export function NavRail() {
 
         <ul
           id="nav-rail-items"
-          className={`flex flex-1 flex-col gap-1 overflow-y-auto py-2 ${
+          className={`flex flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden py-2 ${
             isExpanded ? 'px-2' : 'items-center px-2'
           }`}
         >
@@ -210,12 +210,6 @@ export function NavRail() {
                   isExpanded ? 'w-full gap-2.5 px-2.5 py-2' : 'h-12 w-12 flex-col justify-center gap-0.5'
                 } ${isActive ? 'bg-white/15 text-white' : 'text-emerald-200/70 hover:bg-white/10 hover:text-white'}`}
               >
-                {isActive && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r bg-emerald-300"
-                  />
-                )}
                 <FeedbackIcon className="h-5 w-5 flex-shrink-0" />
                 {isExpanded ? (
                   <span className="truncate text-xs font-medium">{FEEDBACK_NAV_ITEM.label}</span>
