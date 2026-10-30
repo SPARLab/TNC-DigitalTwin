@@ -50,6 +50,12 @@ function ExperienceCard({
         </span>
       )}
 
+      {experience.beta && !isComingSoon && (
+        <span className="absolute right-2.5 top-2 z-10 rounded bg-sky-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-sky-700 shadow-sm">
+          Beta
+        </span>
+      )}
+
       <div className="relative h-[140px] overflow-hidden">
         <img
           src={experience.image}

@@ -28,6 +28,8 @@ interface ExperienceDefinitionBase {
   usesRealTimeData: boolean;
   /** False once the experience has a working control panel wired up. */
   comingSoon: boolean;
+  /** Shows a Beta tag on the card while the experience invites feedback. */
+  beta?: boolean;
   /** Card thumbnail. Falls back to the shared model still if omitted. */
   image: string;
 }
@@ -128,6 +130,7 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     kind: 'model',
     usesRealTimeData: false,
     comingSoon: false,
+    beta: true,
     image: '/experience-thumbnails/creek-water-visualization.jpg',
     standaloneAppUrl: '/standalone-experiences/creek-water-visualization/index.html',
   },
