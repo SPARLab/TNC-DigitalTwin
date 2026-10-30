@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import baseConfig from './playwright.config';
+import baseConfig from './playwright.legacy-e2e.config';
 
 /**
  * Playwright config for checkpoint test runs

@@ -52,3 +52,9 @@ twin_models/
 
 # Standalone Experience builds (npm run build:standalone-experiences)
 /public/standalone-experiences/
+
+# Feature-centered test system (generated results and caches; see TESTING.md)
+.test-cache/
+.test-results/
+playwright-report/
+test-results/

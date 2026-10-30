@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 3,
+  "featureSets": [
+    {
+      "id": "FS-100",
+      "name": "Data Export"
+    },
+    {
+      "id": "FS-900",
+      "name": "Example catalog",
+      "example": true
+    }
+  ],
+  "features": [
+    {
+      "id": "F-110",
+      "featureSetId": "FS-100",
+      "name": "Export cart",
+      "lifecycle": "active",
+      "lifecycleChange": null
+    },
+    {
+      "id": "F-900",
+      "featureSetId": "FS-900",
+      "name": "Account sign-in",
+      "lifecycle": "active",
+      "lifecycleChange": null
+    }
+  ],
+  "criticalCoreAreas": [
+    {
+      "id": "CC-900",
+      "name": "Example calculations",
+      "example": true
+    }
+  ],
+  "examples": [
+    {
+      "id": "FBT-E001",
+      "name": "A new user can sign in and register for multi-factor authentication.",
+      "methodology": "This example does not run. If promoted, the browser and application flow would be real: the test would create a new account through the user interface, enroll an authenticator second factor, sign out, and sign back in with the password plus a current authenticator code before observing the account page. The identity backend would need an isolated test tenant or emulator, the authenticator-code helper would be test-only, and authentication responses would not be mocked. SMS and email enrollment are not covered.",
+      "category": "feature-behavior",
+      "owner": "F-900",
+      "sourceFile": "tests/features/FS-900-example-catalog/F-900-account-sign-in/behavior/FBT-E001.example.spec.ts"
+    },
+    {
+      "id": "FBT-E002",
+      "name": "Signing in with a wrong password shows an error and does not open the account.",
+      "methodology": "This example does not run. If promoted, it would use the real browser and application flow with an isolated test account to submit a known wrong password, observe the visible error, verify that account navigation and multi-factor enrollment do not appear, then visit the protected account URL directly and observe the sign-in page instead of account content. The account credentials would be test-only, and authentication responses would not be mocked. This checks browser-observable access and does not inspect the identity provider's internal session storage.",
+      "category": "feature-behavior",
+      "owner": "F-900",
+      "sourceFile": "tests/features/FS-900-example-catalog/F-900-account-sign-in/behavior/FBT-E002.example.spec.ts"
+    },
+    {
+      "id": "CCT-E001",
+      "name": "Water depth in meters equals the surveyed water elevation minus the surveyed bed elevation.",
+      "methodology": "This example does not run. If promoted, it would call the real production water-depth calculation through an imported production seam and compare exact known surveyed values: 103.75 m water minus 101.25 m bed equals 2.5 m, and 99.5 m water minus 100 m bed equals -0.5 m. Inputs are fixed test values; no calculation or response is mocked. It does not read a map or network response.",
+      "category": "critical-core",
+      "owner": "CC-900",
+      "sourceFile": "tests/core/CC-900-example-calculations/CCT-E001.example.test.ts"
+    }
+  ],
+  "tests": [
+    {
+      "id": "FBT-001",
+      "name": "Exporting a pinned layer from the export cart downloads a ZIP package that names that layer, its view, and the chosen format.",
+      "methodology": "Opens the running app on the catalog page, pins \"Santa Barbara County Boundary\" by its catalog layer id (dataset-151), opens the export cart, and clicks Export ZIP. The app, the layer catalog fetched from live services, the clicks, and the browser download are real; Playwright captures the download and the test reads the saved file back with JSZip. Esri map responses come through the response cache (a response missing from the cache is fetched live and saved). The test checks the download file name, that the ZIP opens, that the manifest names the layer, its layer id, the Metadata format, and the Active View, and that the layer's folder holds its layer selection and Active View selection files. It does not check that the package contains actual layer data (open product decision: today the ZIP holds only metadata) or any file contents beyond the manifest and selection files. Layers are picked by id, never by list position, and the test does not assume an empty cart.",
+      "category": "feature-behavior",
+      "owner": "F-110",
+      "additionalFeatureAssociations": [],
+      "scope": "end-to-end",
+      "environment": "browser",
+      "browserMode": "live",
+      "regression": false,
+      "bugReference": null,
+      "rootCauseAnalysis": null,
+      "enforcement": "required",
+      "enforcementChange": null,
+      "durationBudgetMs": 20000,
+      "fast": false,
+      "sourceFile": "tests/features/FS-100-data-export/F-110-export-cart/behavior/FBT-001.live.spec.ts"
+    },
+    {
+      "id": "FBT-002",
+      "name": "Generating links from the export cart downloads a text file with a link for each pinned layer.",
+      "methodology": "Opens the running app on the catalog page, pins \"Santa Barbara County Boundary\" by its catalog layer id (dataset-151), opens the export cart, and clicks Generate Links. The app, the layer catalog fetched from live services, the clicks, and the browser download are real; Playwright captures the download and the test reads the saved text file. Esri map responses come through the response cache (a response missing from the cache is fetched live and saved). The test checks the download file name, that the text names both pinned layers (the default-pinned \"Dangermond Preserve Simple Boundary\" and the newly pinned \"Santa Barbara County Boundary\"), and that the \"Global export link\" URL carries a v2ExportBundle query parameter whose decoded payload lists layer id dataset-151. It does not check that opening a share link restores anything (open product decision: no code reads v2ExportBundle). Layers are picked by id, never by list position, and the test does not assume an empty cart.",
+      "category": "feature-behavior",
+      "owner": "F-110",
+      "additionalFeatureAssociations": [],
+      "scope": "end-to-end",
+      "environment": "browser",
+      "browserMode": "live",
+      "regression": false,
+      "bugReference": null,
+      "rootCauseAnalysis": null,
+      "enforcement": "required",
+      "enforcementChange": null,
+      "durationBudgetMs": 20000,
+      "fast": false,
+      "sourceFile": "tests/features/FS-100-data-export/F-110-export-cart/behavior/FBT-002.live.spec.ts"
+    },
+    {
+      "id": "FBT-003",
+      "name": "Unpinning a layer removes it from the exported package.",
+      "methodology": "Opens the running app on the catalog page, pins \"Santa Barbara County Boundary\" (dataset-151) next to the default-pinned \"Dangermond Preserve Simple Boundary\" (dataset-115), unpins dataset-115 with its Unpin button in the layer list, opens the export cart, and clicks Export ZIP. The app, the layer catalog fetched from live services, the clicks, and the browser download are real; Playwright captures the download and the test reads the saved file back with JSZip. Esri map responses come through the response cache (a response missing from the cache is fetched live and saved). The test checks that the manifest lists only dataset-151 and that the ZIP holds exactly one layer folder. It does not check that the package contains actual layer data (open product decision: today the ZIP holds only metadata) or any file contents beyond the manifest. Layers are picked by id, never by list position.",
+      "category": "feature-behavior",
+      "owner": "F-110",
+      "additionalFeatureAssociations": [],
+      "scope": "end-to-end",
+      "environment": "browser",
+      "browserMode": "live",
+      "regression": false,
+      "bugReference": null,
+      "rootCauseAnalysis": null,
+      "enforcement": "required",
+      "enforcementChange": null,
+      "durationBudgetMs": 20000,
+      "fast": false,
+      "sourceFile": "tests/features/FS-100-data-export/F-110-export-cart/behavior/FBT-003.live.spec.ts"
+    },
+    {
+      "id": "FBT-004",
+      "name": "Exporting an iNaturalist layer with CSV selected downloads a ZIP that contains a CSV file of observations.",
+      "methodology": "Opens the running app on the catalog page, expands the categories that hold \"iNaturalist Observations\", pins it by its catalog layer id (inaturalist-obs), opens the export cart, keeps the CSV format that is ticked by default, and clicks Export ZIP. The app, the layer catalog fetched from live services, the clicks, and the browser download are real; Playwright captures the download and the test reads the saved file back with JSZip. Esri map responses come through the response cache (a response missing from the cache is fetched live and saved). The test checks the download file name, that the ZIP opens, that the manifest lists the iNaturalist layer with the CSV format, and that the ZIP holds at least one file ending in .csv whose text has a header row and at least one data row. It does not check CSV column values, observation values, GeoJSON, or other data sources, and it ignores the cart's pending result count and size estimate. Layers are picked by id, never by list position. Expected to fail until UCS-306 is resolved: today the package lists CSV in its manifest but contains no CSV file.",
+      "category": "feature-behavior",
+      "owner": "F-110",
+      "additionalFeatureAssociations": [],
+      "scope": "end-to-end",
+      "environment": "browser",
+      "browserMode": "live",
+      "regression": false,
+      "bugReference": null,
+      "rootCauseAnalysis": null,
+      "enforcement": "nonblocking",
+      "enforcementChange": {
+        "reason": "Known product bug awaiting a decision on whether it is a release requirement: UCS-306 (FBT-004) / UCS-307 (FBT-005)",
+        "affectedBehaviors": [
+          "Exporting an iNaturalist layer with CSV selected downloads a ZIP that contains a CSV file of observations."
+        ],
+        "consequences": "The test runs and reports its failure under feature commands and test:id, and shows in the catalog, but a failure does not block the release gate while UCS-306 is open. Reactivation plan: switch to required once the bug is fixed or the test is rewritten.",
+        "approvalEvidence": "Approved by Will Overbye-Thompson in Cursor chat, Oct 30, 2026 (UCS-288)"
+      },
+      "durationBudgetMs": 20000,
+      "fast": false,
+      "sourceFile": "tests/features/FS-100-data-export/F-110-export-cart/behavior/FBT-004.live.spec.ts"
+    },
+    {
+      "id": "FBT-005",
+      "name": "Opening a link from \"Generate Links\" in a new browser session shows the same layer pinned.",
+      "methodology": "Opens the running app on the catalog page, pins \"Santa Barbara County Boundary\" by its catalog layer id (dataset-151), opens the export cart, and clicks Generate Links. The app, the layer catalog fetched from live services, the clicks, and the browser download are real; Playwright captures the download and the test reads the saved text file. The test takes the \"Global export link\" URL from it and opens that URL in a brand-new browser context, a clean session with no pinned layers, storage, or cookies carried over. Esri map responses come through the response cache in both sessions (a response missing from the cache is fetched live and saved). The test checks that the fresh session shows dataset-151 as pinned (its Unpin button is present). It does not check that the shared view or filters are restored, or that the cart opens. Layers are picked by id, never by list position. Expected to fail until UCS-307 is resolved: today the link opens a session with only the default-pinned layer.",
+      "category": "feature-behavior",
+      "owner": "F-110",
+      "additionalFeatureAssociations": [],
+      "scope": "end-to-end",
+      "environment": "browser",
+      "browserMode": "live",
+      "regression": false,
+      "bugReference": null,
+      "rootCauseAnalysis": null,
+      "enforcement": "nonblocking",
+      "enforcementChange": {
+        "reason": "Known product bug awaiting a decision on whether it is a release requirement: UCS-306 (FBT-004) / UCS-307 (FBT-005)",
+        "affectedBehaviors": [
+          "Opening a link from \"Generate Links\" in a new browser session shows the same layer pinned."
+        ],
+        "consequences": "The test runs and reports its failure under feature commands and test:id, and shows in the catalog, but a failure does not block the release gate while UCS-307 is open. Reactivation plan: switch to required once the bug is fixed or the test is rewritten.",
+        "approvalEvidence": "Approved by Will Overbye-Thompson in Cursor chat, Oct 30, 2026 (UCS-288)"
+      },
+      "durationBudgetMs": 20000,
+      "fast": false,
+      "sourceFile": "tests/features/FS-100-data-export/F-110-export-cart/behavior/FBT-005.live.spec.ts"
+    },
+    {
+      "id": "SST-001",
+      "name": "The catalog rejects a test entry that breaks the classification rules, and feature filters return each matching test once.",
+      "methodology": "Builds a sample catalog in memory, breaks one classification rule at a time, and checks that validation names that break, including a malformed catalog test identifier and a category prefix that does not match its category. It also checks that a feature filter returns each matching sample once, and that asking for one catalog test identifier still returns that test when it is disabled. With synthetic Playwright JSON, it checks that the stored result is the final attempt: a later pass after an earlier failure or inconclusive attempt is passed with a passed-after-retry record, a single pass has no flag, a final failure stays failed, and a final inconclusive attempt stays inconclusive. It does not open the catalog page, require the live catalog to contain zero tests, or run an application test. It checks that a Bug Check requires a nonempty bug reference and root cause analysis on a Feature Behavior Test, and that a baseline test leaves both null.",
+      "category": "shared-supporting",
+      "owner": null,
+      "additionalFeatureAssociations": [],
+      "scope": "unit",
+      "environment": "non-browser",
+      "browserMode": "not-applicable",
+      "regression": false,
+      "bugReference": null,
+      "rootCauseAnalysis": null,
+      "enforcement": "nonblocking",
+      "enforcementChange": null,
+      "durationBudgetMs": 1000,
+      "fast": true,
+      "sourceFile": "tests/shared/SST-001.test.ts"
+    },
+    {
+      "id": "SST-002",
+      "name": "The release check runs the core tests first and stops before feature tests if a core test fails.",
+      "methodology": "Calls the same release-gate function the release command uses, with stand-in results. It checks that core runs first and that a failing or inconclusive core result stops the feature phase. It does not run the application or a real failing core test.",
+      "category": "shared-supporting",
+      "owner": null,
+      "additionalFeatureAssociations": [],
+      "scope": "unit",
+      "environment": "non-browser",
+      "browserMode": "not-applicable",
+      "regression": false,
+      "bugReference": null,
+      "rootCauseAnalysis": null,
+      "enforcement": "nonblocking",
+      "enforcementChange": null,
+      "durationBudgetMs": 1000,
+      "fast": true,
+      "sourceFile": "tests/shared/SST-002.test.ts"
+    }
+  ]
+}
