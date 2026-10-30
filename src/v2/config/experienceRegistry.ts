@@ -74,8 +74,8 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     id: 'suitability',
     name: 'Suitability Modeler',
     description:
-      'Run a weighted raster overlay across catalog layers with custom ' +
-      'reclassification rules to score habitat or siting suitability.',
+      'Map suitable areas for conservation management, research or restoration ' +
+      'using environmental layers from our data catalog.',
     icon: Layers,
     categoryId: 'general',
     kind: 'model',
