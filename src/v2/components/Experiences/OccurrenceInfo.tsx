@@ -25,8 +25,19 @@ export function OccurrenceInfo({ species, onTogglePoints, isOnMap }: OccurrenceI
   const arePointsVisible = isOnMap ?? localVisible;
   const previousSpeciesRef = useRef<string | null>(null);
 
+  // Read inside the effect, so a new callback each render doesn't re-run it.
+  const onTogglePointsRef = useRef(onTogglePoints);
+  onTogglePointsRef.current = onTogglePoints;
+
   useEffect(() => {
+    // A species that is no longer chosen gives up its records on the map.
+    const left = previousSpeciesRef.current;
+    if (left && left !== species) {
+      onTogglePointsRef.current?.({ species: left, action: 'release' });
+    }
+
     if (!species) {
+      previousSpeciesRef.current = null;
       setFeatures(null);
       setArePointsVisible(false);
       return;

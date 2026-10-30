@@ -449,6 +449,15 @@ export function ExperienceMap({
     const map = requireMap(view);
     const speciesKey = pointsAction.species;
 
+    if (pointsAction.action === 'hide') {
+      // The species has runs, so its records stay in the layer list, switched off.
+      const group = findLayer(map, speciesGroupId(pointsAction.species)) as GroupLayer | undefined;
+      const existing = group ? findChildLayer(group, childTitle) : undefined;
+      if (existing) existing.visible = false;
+      refreshVisibilityRef.current();
+      return;
+    }
+
     if (pointsAction.action === 'remove') {
       const group = findLayer(map, speciesGroupId(pointsAction.species)) as GroupLayer | undefined;
       if (!group) return;

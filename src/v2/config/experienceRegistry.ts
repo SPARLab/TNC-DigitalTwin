@@ -88,10 +88,10 @@ export const EXPERIENCES: ExperienceDefinition[] = [
   },
   {
     id: 'sdm',
-    name: 'Species Distribution Model',
+    name: 'Where Will Species Be in the Future?',
     description:
-      'Fit a Random Forest distribution model from occurrence records and ' +
-      'environmental predictors, including future climate scenarios.',
+      'Choose a terrestrial species and see where it may be found across Santa Barbara, San Luis Obispo and Ventura Counties as the climate changes, ' +
+      'under today’s climate or future scenarios.',
     icon: Sprout,
     categoryId: 'biodiversity',
     kind: 'model',

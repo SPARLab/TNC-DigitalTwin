@@ -68,7 +68,7 @@ function renderPanel() {
 }
 
 function toScenarioStep() {
-  click(/start species model/i);
+  click(/get started/i);
   click(/choose bobcat/i);
   click(/continue to scenario/i);
 }
@@ -78,13 +78,27 @@ const tasks = () => submitGpJob.mock.calls.map((call) => call[1]);
 describe('SDMPanel wizard', () => {
   it('opens on an overview of the tool', () => {
     renderPanel();
-    expect(screen.getByRole('heading', { name: /species distribution model/i })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /where will species be in the future/i })).toBeTruthy();
     expect(screen.getByText(/how a run works/i)).toBeTruthy();
+  });
+
+  it('keeps the detailed explanation in a pop-up', () => {
+    renderPanel();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByText(/random forest/i)).toBeNull();
+
+    click(/how does this model work/i);
+    const dialog = screen.getByRole('dialog');
+    expect(dialog.textContent).toMatch(/random forest/i);
+    expect(dialog.textContent).toMatch(/GBIF/);
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('does not continue past the species step until one is chosen', () => {
     renderPanel();
-    click(/start species model/i);
+    click(/get started/i);
     const next = screen.getByRole('button', { name: /continue to scenario/i }) as HTMLButtonElement;
     expect(next.disabled).toBe(true);
     click(/choose bobcat/i);

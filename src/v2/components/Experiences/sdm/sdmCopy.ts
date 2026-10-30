@@ -4,32 +4,91 @@
 // ============================================================================
 
 export const SDM_INTRO = {
-  headline: 'Species Distribution Model',
+  headline: 'Where will species be in the future?',
   summary:
-    'Estimate where a species could live by relating the places it has been '
-    + 'recorded to the climate in those places. A random forest learns that '
-    + 'pattern, then scores every 1 km cell for how suitable its climate is.',
-  examples:
-    'Use it to see where a species is likely to occur beyond where it has been '
-    + 'seen, or how its suitable habitat may shift under a warmer, drier future.',
-  dataOverview:
-    'Species records come from GBIF occurrences in the Santa Barbara, Ventura '
-    + 'and San Luis Obispo county area. Climate comes from eight CHELSA V2.1 '
-    + 'bioclimatic variables (temperature and precipitation measures) at 1 km.',
+    'Choose a terrestrial species and see where it may be found across Santa Barbara, '
+    + 'San Luis Obispo and Ventura Counties as the climate changes.',
   howItWorks: [
-    'Pick a species. Its records are matched to the climate where each was seen and compared with random background locations.',
-    'Pick one or more climate scenarios and time periods to map habitat onto.',
-    'Choose whether to map a probability or a suitable / unsuitable answer.',
-    'Run the model. It is fitted once, then applied to each climate you chose. Results are listed in the panel on the right, where you can also compare runs.',
+    'Pick a terrestrial species.',
+    'Pick one or more climates: today, or a future scenario.',
+    'Choose a map of how likely the species is to live in each place, or a simple suitable / unsuitable map.',
+    'Run it. The maps appear on the map and in the panel on the right, where you can also compare them.',
+  ],
+  learnMore: 'How does this model work?',
+} as const;
+
+/** The longer explanation, shown in a pop-up rather than on the intro. */
+export const SDM_EXPLAINER = {
+  title: 'How the species model works',
+  intro:
+    'This is a species distribution model for terrestrial (land) species, mapped '
+    + 'across Santa Barbara, San Luis Obispo and Ventura Counties. It finds the '
+    + 'climate a species has been seen in, then looks for places with a similar '
+    + 'climate.',
+  sections: [
+    {
+      title: 'What it estimates',
+      body:
+        'For every 1 km cell it gives a score for how suitable the climate is '
+        + 'for the species. A random forest learns the pattern by comparing the '
+        + 'climate where the species has been recorded with the climate at '
+        + 'random places. Use it to see where a species could occur beyond where '
+        + 'it has been seen, or how its suitable area may shift in a warmer, '
+        + 'drier future.',
+    },
+    {
+      title: 'Where the data comes from',
+      body:
+        'Species records come from GBIF occurrences in Santa Barbara, San Luis '
+        + 'Obispo and Ventura Counties, and the map covers the same three '
+        + 'counties. Climate comes from eight '
+        + 'CHELSA V2.1 bioclimatic variables (temperature and precipitation '
+        + 'measures) at 1 km.',
+    },
+    {
+      title: 'How future climates are handled',
+      body:
+        'The model only learns from today’s climate (1981–2010). A future '
+        + 'scenario is never used for learning: the same model is applied to it, '
+        + 'so the map shows where the climate the species lives in today could '
+        + 'be found later. A model is fitted once per species and reused for '
+        + 'each climate you choose.',
+    },
+    {
+      title: 'Reading the result',
+      body:
+        'Probability maps give every cell a score from 0 to 1, which keeps all '
+        + 'the detail. Binary maps mark each cell suitable or unsuitable using '
+        + 'the cutoff the model chose as the best separator of records from '
+        + 'random places, which is easier to read but loses detail. The summary '
+        + 'on the right also reports the same figures inside the Dangermond '
+        + 'Preserve.',
+    },
+    {
+      title: 'Things to keep in mind',
+      body:
+        'The model is built for land species, so open water is left out of '
+        + 'the records, the training and the map. The map covers the land of '
+        + 'Santa Barbara, San Luis Obispo and Ventura Counties only, and a '
+        + 'cell on the shore is kept if any of it is land. Within the land it '
+        + 'uses climate '
+        + 'only. It does not know about vegetation, barriers or other '
+        + 'species, so a suitable cell is a place the species could live, not '
+        + 'a place it does. Species with few records '
+        + 'give less reliable results, and 1 km cells are coarse for small '
+        + 'areas.',
+    },
   ],
 } as const;
 
 export const SDM_SPECIES_STEP = {
   title: 'Species',
   body:
-    'Search by common or scientific name. Use the filters to narrow the list '
-    + 'to a group of animals, plants or fungi, or to species with more records, '
-    + 'since a model built from only a few records is less reliable.',
+    'Search for a terrestrial species recorded in Santa Barbara, San Luis Obispo '
+    + 'or Ventura County by common or scientific name. Use the '
+    + 'filters to narrow the list to a group of animals, plants or fungi. Fish and '
+    + 'marine mammals are not listed, and neither are species with too few '
+    + 'records to model. A model built from only a few records is less reliable.',
   occurrences:
     'The record count shows how many occurrences were found. Show plots them on '
     + 'the map so you can see where the model is learning from.',
