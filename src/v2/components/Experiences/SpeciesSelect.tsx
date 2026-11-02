@@ -9,10 +9,7 @@ import { ChevronDown, Loader2, Search, X } from 'lucide-react';
 import {
   ANIMAL_GROUPS,
   DEFAULT_ANIMAL_GROUP,
-  DEFAULT_MIN_MODEL_POINTS,
   formatSpeciesLabel,
-  MODEL_POINT_FILTERS,
-  SDM_MIN_MODEL_POINTS,
   searchSpeciesNames,
   type AnimalGroup,
   type SpeciesKingdomFilter,
@@ -40,7 +37,6 @@ const KINGDOM_OPTIONS: { id: SpeciesKingdomFilter; label: string }[] = [
 export function SpeciesSelect({ value, onChange }: SpeciesSelectProps) {
   const [kingdom, setKingdom] = useState<SpeciesKingdomFilter>('Animalia');
   const [animalGroup, setAnimalGroup] = useState<AnimalGroup>(DEFAULT_ANIMAL_GROUP);
-  const [minModelPoints, setMinModelPoints] = useState(DEFAULT_MIN_MODEL_POINTS);
   const [modelPointsAvailable, setModelPointsAvailable] = useState(true);
   const [search, setSearch] = useState('');
   const [isOpen, setOpen] = useState(false);
@@ -71,7 +67,6 @@ export function SpeciesSelect({ value, onChange }: SpeciesSelectProps) {
       searchSpeciesNames({
         kingdom,
         animalGroup,
-        minModelPoints,
         search,
         limit: PAGE_SIZE,
         signal: controller.signal,
@@ -96,14 +91,13 @@ export function SpeciesSelect({ value, onChange }: SpeciesSelectProps) {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [isOpen, kingdom, animalGroup, minModelPoints, search]);
+  }, [isOpen, kingdom, animalGroup, search]);
 
   const loadMore = () => {
     setLoading(true);
     searchSpeciesNames({
       kingdom,
       animalGroup,
-      minModelPoints,
       search,
       offset: items.length,
       limit: PAGE_SIZE,
@@ -193,32 +187,11 @@ export function SpeciesSelect({ value, onChange }: SpeciesSelectProps) {
             </div>
           )}
 
-          <div className="mx-2 mb-2">
-            <select
-              aria-label="Minimum model points"
-              title="Model points: tri-county records, one per 1 km climate cell. The model needs at least 10."
-              value={minModelPoints}
-              onChange={(event) => setMinModelPoints(Number(event.target.value))}
-              className="w-full rounded-button border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-700"
-            >
-              {MODEL_POINT_FILTERS.map((option) => (
-                <option key={option.min} value={option.min}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
           <div className="max-h-64 overflow-y-auto border-t border-gray-100">
             {error ? (
               <p className="px-3 py-2 text-[11px] text-red-600">{error}</p>
             ) : items.length === 0 && !isLoading ? (
-              <p className="px-3 py-2 text-[11px] text-gray-500">
-                No species found
-                {minModelPoints > 0 && modelPointsAvailable
-                  ? ` with ${minModelPoints}+ model points. Try "Any species" to see species with too few records.`
-                  : ''}
-              </p>
+              <p className="px-3 py-2 text-[11px] text-gray-500">No species found</p>
             ) : (
               items.map((item) => (
                 <button
@@ -246,16 +219,8 @@ export function SpeciesSelect({ value, onChange }: SpeciesSelectProps) {
                   </span>
                   {item.modelPoints != null && (
                     <span
-                      title={
-                        item.modelPoints >= SDM_MIN_MODEL_POINTS
-                          ? `${item.modelPoints.toLocaleString()} model points (tri-county records, one per 1 km climate cell)`
-                          : `Only ${item.modelPoints} model points; the model needs at least ${SDM_MIN_MODEL_POINTS}`
-                      }
-                      className={`flex-shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                        item.modelPoints >= SDM_MIN_MODEL_POINTS
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-amber-100 text-amber-800'
-                      }`}
+                      title={`${item.modelPoints.toLocaleString()} model points (tri-county land records, one per 1 km climate cell)`}
+                      className="flex-shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800"
                     >
                       {item.modelPoints.toLocaleString()} pts
                     </span>

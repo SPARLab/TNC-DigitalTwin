@@ -2,14 +2,15 @@
 // AboutPage — preserve introduction, contact, and team.
 // ============================================================================
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Check, Mail } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { Mail, MessageSquareText } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { FEEDBACK_PATH } from '../config/navigation';
 import {
   ABOUT_HERO_IMAGE,
   ABOUT_PARAGRAPHS,
   CONTACT_TOPICS,
   TEAM_MEMBERS,
-  contactEmail,
   initialsFor,
 } from './aboutContent';
 
@@ -60,7 +61,7 @@ export function AboutPage() {
             />
             <img
               src="/spatial.png"
-              alt="UCSB Spatial Center"
+              alt="UC Santa Barbara Spatial Center"
               className="h-10 w-auto object-contain [filter:drop-shadow(0_1px_4px_rgba(0,0,0,0.45))]"
             />
           </div>
@@ -116,69 +117,30 @@ function ContactSidebar() {
       </dl>
 
       <div className="mt-5 border-t border-gray-100 pt-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 xl:text-sm">Email</p>
-        <CopyEmailButton />
-      </div>    </aside>
+        <p className="text-sm leading-relaxed text-gray-600 xl:text-base">
+          Send us a message with the form on the Feedback page.
+        </p>
+        <FeedbackButton />
+      </div>
+    </aside>
   );
 }
 
-type CopyStatus = 'idle' | 'copied' | 'blocked';
-
-/**
- * Copies the team address to the clipboard. The address is not rendered until
- * copying is blocked (for example on a non-secure page), so scrapers reading the
- * page text do not find it.
- */
-function CopyEmailButton() {
-  const [status, setStatus] = useState<CopyStatus>('idle');
-  const [address, setAddress] = useState('');
-  const resetTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  useEffect(() => () => clearTimeout(resetTimer.current), []);
-
-  if (!contactEmail()) {
-    return (
-      <p id="about-contact-email" className="mt-1 text-sm text-gray-600 xl:text-base">
-        The team inbox will be listed here soon.
-      </p>
-    );
-  }
-
-  async function copy() {
-    const email = contactEmail();
-    clearTimeout(resetTimer.current);
-    try {
-      await navigator.clipboard.writeText(email);
-      setStatus('copied');
-      resetTimer.current = setTimeout(() => setStatus('idle'), 2500);
-    } catch {
-      setAddress(email);
-      setStatus('blocked');
-    }
-  }
-
-  const copied = status === 'copied';
+/** Opens the Feedback page, the same one as the Feedback item in the nav rail. */
+function FeedbackButton() {
+  const navigate = useNavigate();
+  const location = useLocation();
 
   return (
-    <div className="mt-2">
-      <button
-        id="about-contact-email"
-        type="button"
-        onClick={copy}
-        className="inline-flex items-center gap-2 rounded-button border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-emerald-800 transition-colors hover:border-emerald-300 hover:bg-emerald-50 xl:text-base 2xl:text-lg"
-      >
-        {copied ? <Check className="h-4 w-4 shrink-0" aria-hidden /> : <Mail className="h-4 w-4 shrink-0" aria-hidden />}
-        {copied ? 'Email copied' : 'Copy email address'}
-      </button>
-      <p role="status" className="mt-2 text-sm text-gray-600 xl:text-base">
-        {status === 'blocked' && (
-          <>
-            Copying was blocked by your browser. Our address is{' '}
-            <span className="select-all break-all font-medium text-gray-900">{address}</span>.
-          </>
-        )}
-      </p>
-    </div>
+    <button
+      id="about-contact-feedback"
+      type="button"
+      onClick={() => navigate(FEEDBACK_PATH, { state: { from: location.pathname } })}
+      className="mt-3 inline-flex items-center gap-2 rounded-button bg-emerald-700 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-800 xl:text-base 2xl:text-lg"
+    >
+      <MessageSquareText className="h-4 w-4 shrink-0" aria-hidden />
+      Go to the feedback form
+    </button>
   );
 }
 
@@ -187,7 +149,7 @@ function TeamSection() {
     <section id="about-team">
       <SectionHeading>Our team</SectionHeading>
       <p className="mt-4 max-w-2xl text-sm text-gray-600 xl:text-base 2xl:max-w-3xl 2xl:text-lg">
-        The Nature Conservancy’s Point Conception Institute and the Center for Spatial Science at UCSB.
+        The Center for Spatial Science at UC Santa Barbara and The Nature Conservancy’s Point Conception Institute.
       </p>
 
       <ul className="mt-6 grid auto-rows-fr gap-5 2xl:grid-cols-2">
@@ -195,7 +157,9 @@ function TeamSection() {
           <li
             key={member.id}
             id={`about-team-${member.id}`}
-            className="flex items-center gap-5 rounded-card border border-gray-200 bg-white p-5 2xl:gap-6"
+            // The text keeps a minimum width of about 19.5rem, so once the card is
+            // narrower than roughly 500px it drops under the photo instead of squeezing.
+            className="flex flex-wrap items-center justify-center gap-x-5 gap-y-4 rounded-card border border-gray-200 bg-white p-5 2xl:gap-x-6"
           >
             <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-100 text-3xl font-semibold text-emerald-900 xl:h-40 xl:w-40 xl:text-4xl 2xl:h-48 2xl:w-48 2xl:text-5xl">
               {member.photoSrc ? (
@@ -204,7 +168,7 @@ function TeamSection() {
                 <span aria-hidden="true">{initialsFor(member.name)}</span>
               )}
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1 basis-[19.5rem]">
               <h3 className="text-sm font-semibold text-gray-900 xl:text-base 2xl:text-lg">{member.name}</h3>
               <p className="mt-1 text-sm leading-relaxed text-gray-600 xl:text-base 2xl:text-lg">{member.bio}</p>
             </div>

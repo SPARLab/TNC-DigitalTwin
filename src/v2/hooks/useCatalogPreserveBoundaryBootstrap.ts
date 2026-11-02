@@ -1,7 +1,7 @@
 // ============================================================================
 // useCatalogPreserveBoundaryBootstrap — on first catalog load, pin the preserve
-// boundary like any other layer (same pin/active visibility rules) and expand
-// it in the left sidebar.
+// boundary like any other layer (same pin/active visibility rules). The left
+// sidebar tree stays collapsed.
 // ============================================================================
 
 import { useEffect, useRef } from 'react';
@@ -26,13 +26,8 @@ export function useCatalogPreserveBoundaryBootstrap(): void {
       pinLayer(boundaryLayer.id);
     }
     if (!activeLayer) {
-      activateLayer(boundaryLayer.id);
+      // Keep the catalog tree collapsed on first load.
+      activateLayer(boundaryLayer.id, undefined, undefined, undefined, { skipSidebarReveal: true });
     }
-
-    window.setTimeout(() => {
-      document
-        .getElementById(`layer-row-${boundaryLayer.id}`)
-        ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    }, 250);
   }, [loading, layerMap, activateLayer, pinLayer, activeLayer, isLayerPinned]);
 }

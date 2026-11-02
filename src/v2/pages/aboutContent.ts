@@ -4,19 +4,6 @@
 // '/people/amy_frazier.jpg'). A member without a photo shows initials.
 // ============================================================================
 
-/**
- * Inbox for the contact sidebar. The address is kept as two parts and only joined
- * when a visitor clicks the copy button, so it never appears as plain text in the
- * page or the JavaScript bundle where simple email scrapers would find it.
- * Leave either part blank to show a placeholder instead.
- */
-export const ABOUT_CONTACT_EMAIL_PARTS = ['spatial-admin', 'ucsb.edu'] as const;
-
-export function contactEmail(): string {
-  const [user, domain] = ABOUT_CONTACT_EMAIL_PARTS;
-  return user && domain ? `${user}@${domain}` : '';
-}
-
 export const ABOUT_HERO_IMAGE = '/landing.jpg';
 
 export const ABOUT_PARAGRAPHS = [
@@ -63,19 +50,19 @@ export const TEAM_MEMBERS: TeamMember[] = [
     id: 'trisalyn-nelson',
     name: 'Trisalyn Nelson',
     photoSrc: '/people/trisalyn_nelson.jpg',
-    bio: 'Trisalyn Nelson is a Professor and the Jack and Laura Dangermond Chair of Geography at the University of California, Santa Barbara. She is also Director for the Center of Spatial Science at UCSB.',
+    bio: 'Trisalyn Nelson is a Professor and the Jack and Laura Dangermond Chair of Geography at the University of California, Santa Barbara. She is also Director for the Center for Spatial Science at UC Santa Barbara.',
   },
   {
     id: 'will-overbye-thompson',
     name: 'Will Overbye-Thompson',
     photoSrc: '/people/will_overbye_thompson.jpg',
-    bio: 'Will Overbye-Thompson is a GIS Researcher at the University of California, Santa Barbara and a GIS Developer with the Center of Spatial Science.',
+    bio: 'Will Overbye-Thompson is a GIS Researcher at the University of California, Santa Barbara and a GIS Developer with the Center for Spatial Science.',
   },
   {
     id: 'dan-willett',
     name: 'Dan Willett',
     photoSrc: '/people/dan_willett.jpeg',
-    bio: 'Dan Willett is a PhD Student at the University of California, Santa Barbara and a GIS Developer with the Center of Spatial Science.',
+    bio: 'Dan Willett is a PhD Student at the University of California, Santa Barbara and a GIS Developer with the Center for Spatial Science.',
   },
   {
     id: 'sophia-leiker',

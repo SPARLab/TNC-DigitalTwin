@@ -298,7 +298,7 @@ export function RightSidebar() {
             {scrollThumbHeight > 0 && (
               <div
                 id="right-sidebar-scrollbar-overlay"
-                className="pointer-events-none absolute inset-y-1 right-0.5 w-2"
+                className="pointer-events-none absolute inset-y-1 right-0.5 z-10 w-2"
               >
                 <div
                   id="right-sidebar-scrollbar-thumb"

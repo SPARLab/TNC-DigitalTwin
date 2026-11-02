@@ -16,7 +16,7 @@ import { ExperienceMap } from './ExperienceMap';
 import { SDMPanel } from './SDMPanel';
 import { SdmRunsPanel } from './SdmRunsPanel';
 import { speciesColorFor } from './sdm/speciesColors';
-import { showRun } from './sdmRuns';
+import { runSpeciesKey, showRun } from './sdmRuns';
 import { SuitabilityPanel } from './SuitabilityPanel';
 import type { CompletedRun, PointsAction, PreviewAction, RasterScope, ResultLayerInfo } from './types';
 
@@ -70,7 +70,19 @@ export function ExperienceWorkspace({ experience, onClose }: ExperienceWorkspace
     const color = speciesColorFor(speciesColorIndexRef.current, speciesKey);
     setSpeciesColors((current) => ({ ...current, [speciesKey]: color }));
   }, []);
-  const handlePoints = useCallback((action: PointsAction) => {
+  const completedRunsRef = useRef(completedRuns);
+  completedRunsRef.current = completedRuns;
+  const handlePoints = useCallback((requested: PointsAction) => {
+    let action = requested;
+    if (requested.action === 'release') {
+      // A species nobody is looking at any more. Without runs its records have
+      // no reason to stay; with runs they are only hidden, beside the results.
+      if (!pointsOnMapRef.current.has(requested.species)) return;
+      const hasRuns = completedRunsRef.current.some(
+        (run) => runSpeciesKey(run) === requested.species,
+      );
+      action = { species: requested.species, action: hasRuns ? 'hide' : 'remove' };
+    }
     if (action.action === 'add') assignSpeciesColor(action.species);
     if (action.action === 'add') pointsOnMapRef.current.add(action.species);
     else pointsOnMapRef.current.delete(action.species);

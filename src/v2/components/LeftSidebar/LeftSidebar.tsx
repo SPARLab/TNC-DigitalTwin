@@ -204,7 +204,7 @@ export function LeftSidebar() {
 
   // Open every ancestor category for the active layer (Boundaries → Administrative → …).
   const forceExpandedCategoryIds = useMemo(() => {
-    if (!activeLayer) return undefined;
+    if (!activeLayer || activeLayer.skipSidebarReveal) return undefined;
     return findCategoryPathIds(
       categories,
       activeLayer.layerId,
@@ -286,7 +286,7 @@ export function LeftSidebar() {
           {scrollThumbHeight > 0 && (
             <div
               id="left-sidebar-scrollbar-overlay"
-              className="pointer-events-none absolute inset-y-1 right-0.5 w-2"
+              className="pointer-events-none absolute inset-y-1 right-0.5 z-30 w-2"
             >
               <div
                 id="left-sidebar-scrollbar-thumb"

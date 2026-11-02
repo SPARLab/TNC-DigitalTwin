@@ -570,7 +570,7 @@ export function INaturalistBrowseTab() {
           {editFiltersThumbHeight > 0 && (
             <div
               id="inat-edit-filters-scrollbar-overlay"
-              className="pointer-events-none absolute inset-y-0 right-0.5 w-2"
+              className="pointer-events-none absolute inset-y-0 right-0.5 z-10 w-2"
             >
               <div
                 id="inat-edit-filters-scrollbar-thumb"
