@@ -121,7 +121,7 @@ export const EXPERIENCES: ExperienceDefinition[] = [
   },
   {
     id: 'creek-water-visualization',
-    name: 'Creek Water Visualization',
+    name: 'Explore Water Levels Through Time',
     description:
       'Map changing water levels and explore impacts on trout habitat',
     icon: Waves,
