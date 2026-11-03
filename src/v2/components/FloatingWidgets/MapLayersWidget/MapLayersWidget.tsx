@@ -5,7 +5,7 @@
 // Position: top-left of map area. Always visible (no close, only collapse).
 // ============================================================================
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Layers, Pin } from 'lucide-react';
 import { useLayers } from '../../../context/LayerContext';
 import { useCatalog } from '../../../context/CatalogContext';
@@ -24,7 +24,8 @@ import type { ActiveLayer, CountDisplayMode } from '../../../types';
 const COUNT_DISPLAY_MODE: CountDisplayMode = 'results-expanded';
 
 export function MapLayersWidget() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // UCS-318: start collapsed so the catalog's first view is less busy.
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [showLegends, setShowLegends] = useLayerLegendsPreference();
   const {
     activeLayer,
@@ -44,6 +45,13 @@ export function MapLayersWidget() {
   const { layerMap } = useCatalog();
   const { chartPanels } = useDendra();
   const cacheStatusByDataSource = useCacheStatusByDataSource();
+  // Selecting a layer (first row click included) opens the widget so the
+  // highlighted layer is visible.
+  const activeLayerKey = activeLayer ? `${activeLayer.layerId}::${activeLayer.viewId ?? ''}` : null;
+  useEffect(() => {
+    if (activeLayerKey) setIsCollapsed(false);
+  }, [activeLayerKey]);
+
   const concreteActiveLayer = useMemo<ActiveLayer | null>(() => {
     if (!activeLayer) return null;
     if (!activeLayer.isService) return activeLayer;

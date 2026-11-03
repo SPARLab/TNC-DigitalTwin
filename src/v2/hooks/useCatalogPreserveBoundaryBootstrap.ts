@@ -11,7 +11,7 @@ import { findPreserveBoundaryCatalogLayer } from '../utils/findPreserveBoundaryC
 
 export function useCatalogPreserveBoundaryBootstrap(): void {
   const { layerMap, loading } = useCatalog();
-  const { activateLayer, pinLayer, activeLayer, isLayerPinned } = useLayers();
+  const { pinLayer, isLayerPinned } = useLayers();
   const didBootstrapRef = useRef(false);
 
   useEffect(() => {
@@ -25,9 +25,7 @@ export function useCatalogPreserveBoundaryBootstrap(): void {
     if (!isLayerPinned(boundaryLayer.id)) {
       pinLayer(boundaryLayer.id);
     }
-    if (!activeLayer) {
-      // Keep the catalog tree collapsed on first load.
-      activateLayer(boundaryLayer.id, undefined, undefined, undefined, { skipSidebarReveal: true });
-    }
-  }, [loading, layerMap, activateLayer, pinLayer, activeLayer, isLayerPinned]);
+    // UCS-318: the boundary is pinned but not selected, so no layer is active and
+    // the sidebar tree and Map Layers widget both start collapsed.
+  }, [loading, layerMap, pinLayer, isLayerPinned]);
 }
